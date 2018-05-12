@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<!-- https://gist.github.com/Cartman0/436459b9b85cfdd1ca9c -->
+<head>
+	<meta charset="UTF-8">
+	<title>ガッツでC.G.サポートツール</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+      html, body{
+        text-align: center;
+        background-color: #fafafa;
+        font-size: 20px;
+        color: #333;
+      }
+    .content{
+        position: relative;
+        width: 640px;
+        height: 480px;
+        border: 1px solid #333;
+    }
+    .canvas{
+        position: absolute;
+        top: 0px;
+        left: 0px;
+    }
+	</style>
+</head>
+<body>
+  <center><input type="button" onClick="clearData()" value="消去" />
+  <input type="file" name="imageFile" id="imageFile">
+  <input type="button" onClick="changeMode(this)" value="[LINE] COLOR PAINT"/>
+  <br/>
+  <input type="button" onClick="timeStamp()" value="タイムスタンプ"/>
+  <input type="button" onClick="execCopy()" value="クリップボードへコピー"/>
+  <br/><br/>
+  <div class="content">
+	<div class="canvas">
+		<canvas id="imageLayer" width="640" height="480"></canvas>
+    </div>
+      <div class="canvas"><canvas id="alphaLayer" width="640" height="480"></canvas>
+    </div>
+    <div class="canvas"><canvas width="640" height="480" id="mycanvas">Canvasに対応したブラウザを用意して下さい。</canvas></div>
+  </div>
+  </center>
+  <div id="info"></div>
+<script>
+    var drawData = "";
+    var paintData = "";
+    var penColor = 0;
+    var imageFile = document.getElementById('imageFile');
+    imageFile.addEventListener('change', loadImage, false);
+    
+    var drawMode = 0; // 0:draw 1:paint
+      (function(){
+        window.onload = function(){
+          var canvas = document.getElementById('mycanvas');
+          if(!canvas || !canvas.getContext){
+            return false;
+          }
+          var ctx = canvas.getContext('2d');
+
+          //ポインタの座標を取得
+          var mouse = {
+            startX: -1,
+            startY: -1,
+            x: 0,
+            y: 0,
+            color: "black",
+            isDrawing: false
+          };
+          var borderWidth = 1;
+          canvas.addEventListener("mousemove", function(e){
+            //2.ポインタが動いたら座標値を取得
+                var rect = e.target.getBoundingClientRect();
+                mouse.x = e.clientX - rect.left - borderWidth;
+                mouse.y = e.clientY - rect.top - borderWidth;
+                /*
+                pageX[Y], offsetLeft[Top]を使う場合
+                mouse.x = e.pageX - canvas.offsetLeft - borderWidth;
+                mouse.y = e.pageY - canvas.offsetTop - borderWidth;
+                */
+
+            //4.isDrawがtrueのとき描画
+                if (mouse.isDrawing && (drawMode==0 || drawMode==1)){
+                    ctx.beginPath();
+                    ctx.moveTo(mouse.startX, mouse.startY);
+                    ctx.lineTo(mouse.x, mouse.y);
+                    if(drawMode==0){
+                    	ctx.strokeStyle = "black"
+                    }else{
+                    	ctx.strokeStyle = "#" + penColor
+                    }
+                    ctx.stroke();
+                    mouse.startX = mouse.x;
+                    mouse.startY = mouse.y;
+                    drawData = drawData + "," + Math.round(mouse.x) + "," + Math.round(mouse.y)
+                    //document.getElementById("drawData").innerHTML = drawData;
+                }
+                //3.情報をinfoに出力
+                document.getElementById("info").innerHTML =
+                " canvas x座標 = " + Math.floor(mouse.x) + "px" +
+                " canvas y座標 = " + Math.floor(mouse.y) + "px" + '<br>' +
+                " データ量 = " + drawData.length + '<br>';
+
+          });
+
+          //5.ポインタを押したら、描画OK(myDrawをtrue)
+          canvas.addEventListener("mousedown", function(e){
+            if(drawMode == 0 || drawMode ==1){
+            	if(drawMode == 0){
+            		penColor = 0;
+            		drawData = drawData + "0," + Math.round(mouse.x) + "," + Math.round(mouse.y)
+            	}else{
+            	 	penColor = getColor(Math.floor(mouse.x),Math.floor(mouse.y));
+            	 	drawData = drawData + "0x" + penColor + "," + Math.round(mouse.x) + "," + Math.round(mouse.y)
+            	}
+                mouse.isDrawing = true;
+                mouse.startX = mouse.x;
+                mouse.startY = mouse.y;
+                
+                //document.getElementById("drawData").innerHTML = drawData;
+            }else{
+                //その点の画像の色を拾ってPAINT情報を付与
+                paint(mouse.startX,mouse.startX)
+            }
+          });
+
+          //6.ポインタを上げたら、描画禁止(myDrawをfalse)
+            canvas.addEventListener("mouseup", function(e){
+                if(drawMode == 0 || drawMode == 1){
+                    mouse.isDrawing = false;
+                    drawData = drawData + ",-1\n";
+                    //document.getElementById("drawData").innerHTML = drawData;
+                }
+            });
+
+          canvas.addEventListener('mouseleave', function(e){
+            mouse.isDrawing = false;
+          });
+          
+          
+          canvas.addEventListener("touchstart", function(e){
+            var rect = e.target.getBoundingClientRect();
+            mouse.startX = e.touches[0].clientX - rect.left - borderWidth;
+            mouse.startY = e.touches[0].clientY - rect.top - borderWidth;
+            if(drawMode == 0||drawMode == 1){
+            	if(drawMode == 0){
+            		penColor = 0;
+            		drawData = drawData + "0"
+            	}else{
+            	 	penColor = getColor(Math.floor(mouse.startX),Math.floor(mouse.startY));
+            	 	drawData = drawData + "0x" + penColor
+            	}
+                mouse.isDrawing = true;
+                
+                //document.getElementById("drawData").innerHTML = drawData;
+            }else{
+                   //その点の画像の色を拾ってPAINT情報を付与
+                paint(mouse.startX,mouse.startY)
+            }
+          });
+          
+          canvas.addEventListener("touchend", function(e){
+              if(drawMode == 0||drawMode ==1){
+                mouse.isDrawing = false;
+                drawData = drawData + ",-1\n";
+                //document.getElementById("drawData").innerHTML = drawData;
+             }
+          });
+          
+          canvas.addEventListener("touchmove", function(e){
+            e.preventDefault(); // タッチによる画面スクロールを止める
+            //タッチが動いたら座標値を取得
+                var rect = e.target.getBoundingClientRect();
+                mouse.x = e.touches[0].clientX - rect.left - borderWidth;
+                mouse.y = e.touches[0].clientY - rect.top - borderWidth;
+
+                if(drawMode == 0||drawMode==1){
+                     ctx.beginPath();
+                     ctx.moveTo(mouse.startX, mouse.startY);
+                     ctx.lineTo(mouse.x, mouse.y);
+                     if(drawMode == 0){
+                          ctx.strokeStyle = "black"
+                     }else{
+                          ctx.strokeStyle = "#" + penColor
+                     }
+                     ctx.stroke();
+                     drawData = drawData + "," + Math.round(mouse.x) + "," + Math.round(mouse.y)
+                     //document.getElementById("drawData").innerHTML = drawData;
+                 }
+                    mouse.startX = mouse.x;
+                 mouse.startY = mouse.y;
+
+            //情報をinfoに出力
+                document.getElementById("info").innerHTML =
+                " canvas x座標 = " + Math.floor(mouse.x) + "px" +
+                " canvas y座標 = " + Math.floor(mouse.y) + "px" + '<br>' + 
+                " データ量 = " + drawData.length + '<br>';
+                
+          });
+          
+        }
+      })();
+      
+      function clearData(){
+              if(!window.confirm("描画データをクリアしますか？")){
+                  return
+              }
+          var canvas = document.getElementById('mycanvas');
+          if(!canvas || !canvas.getContext){
+            return false;
+          }
+          var ctx = canvas.getContext('2d');
+          drawData = "";
+          paintData = "";
+          //document.getElementById("drawData").innerHTML = drawData;
+          ctx.clearRect(0, 0, 640, 480);
+      }
+      function loadImage(e){
+      //https://www.tam-tam.co.jp/tipsnote/javascript/post13538.html ローカルファイルのロード
+      //https://qiita.com/PG0721/items/599ba2921b8339700fe3 アスペクト比保持読み込み
+
+          //元の画像を保持したまま、表示色を薄くするためのアルファレイヤー
+            var alphaLayer = document.getElementById("alphaLayer");
+            if(!alphaLayer || !alphaLayer.getContext){
+            return false;
+          }
+          var aplhaLayerCtx = alphaLayer.getContext("2d");
+          aplhaLayerCtx.globalAlpha = 0.7;
+          aplhaLayerCtx.fillStyle = "white";
+          aplhaLayerCtx.clearRect(0, 0, 640, 480);
+          aplhaLayerCtx.fillRect(0, 0, aplhaLayerCtx.canvas.width, aplhaLayerCtx.canvas.height);
+
+            var imageLayer = document.getElementById("imageLayer");
+            if(!imageLayer || !imageLayer.getContext){
+            return false;
+          }
+          var imageLayerCtx = imageLayer.getContext("2d");
+
+            // ファイル情報を取得
+            var fileData = e.target.files[0];
+                // 画像ファイル以外は処理を止める
+            if(!fileData.type.match('image.*')) {
+            alert('画像を選択してください');
+                return;
+            }
+            
+            // FileReaderオブジェクトを使ってファイル読み込み
+            var reader = new FileReader();
+            var img = new Image();
+            reader.onload = function() {
+                  img.src = reader.result;
+              }
+            
+           /* 画像が読み込まれるのを待ってから処理を続行 */
+            img.onload = function() {
+                var canvasAspect = imageLayerCtx.canvas.width / imageLayerCtx.canvas.height, // canvasのアスペクト比
+                imgAspect = img.width / img.height, // 画像のアスペクト比
+                left, top, width, height;
+
+                imageLayerCtx.fillStyle = "black";
+                imageLayerCtx.fillRect(0, 0, imageLayerCtx.canvas.width, imageLayerCtx.canvas.height);
+
+                if(imgAspect >= canvasAspect) {// 画像が横長
+                    left = 0;
+                    width = imageLayerCtx.canvas.width;
+                    height = imageLayerCtx.canvas.width / imgAspect;
+                    top = (imageLayerCtx.canvas.height - height) / 2;
+                } else {// 画像が縦長
+                    top = 0;
+                    height = imageLayerCtx.canvas.height;
+                    width = imageLayerCtx.canvas.height * imgAspect;
+                    left = (imageLayerCtx.canvas.width - width) / 2;
+                }
+                imageLayerCtx.drawImage(img, 0, 0, img.width, img.height, 
+                    left, top, width, height);
+                
+            };
+            reader.readAsDataURL(fileData);
+      }
+      function execCopy(){
+              //https://qiita.com/simiraaaa/items/2e7478d72f365aa48356
+              
+              var drawString = "640,480,0xFFFFFF,0\n-10," + drawData + ",-1\n";
+              if (paintData.length > 0){
+                  drawString = drawString + "-20" + paintData;
+              }
+              drawString = drawString + ",-1"
+              
+              var temp = document.createElement('div');
+              temp.appendChild(document.createElement('pre')).textContent = drawString
+            var s = temp.style;
+              s.position = 'fixed';
+              s.left = '-100%';
+
+            document.body.appendChild(temp);
+              document.getSelection().selectAllChildren(temp);
+
+              var result = document.execCommand('copy');
+
+              document.body.removeChild(temp);
+              // true なら実行できている falseなら失敗か対応していないか
+              return result;
+        }
+      
+      function changeMode(obj){
+          if(drawMode==0){
+              obj.value="LINE [COLOR] PAINT";
+              drawMode = 1;
+          }else if(drawMode==1){
+              obj.value="LINE COLOR [PAINT]";
+              drawMode = 2;
+          }else{
+              obj.value="[LINE] COLOR PAINT";
+              penColor = 0;
+              drawMode = 0;
+          }
+      
+      }
+      function paint(x,y){
+        x = Math.floor(x);
+        y = Math.floor(y);
+        paintColor = getColor(x, y);
+          //ペイントデータ追加
+          paintData = paintData + ",0x" + paintColor + "," + x + "," + y + "," + "-1\n"
+
+          //描画レイヤーにその色で円を描く
+        var canvas = document.getElementById('mycanvas');
+          if(!canvas || !canvas.getContext){
+            return false;
+          }
+          var ctx = canvas.getContext('2d');
+            ctx.beginPath();
+            ctx.fillStyle = "#" + paintColor;
+              ctx.arc(x, y, 2, 0, Math.PI*2, false);
+              ctx.fill();
+      }
+      
+      function getColor(x,y){ //https://www.petitmonte.com/javascript/get_image_color.html
+          //画像レイヤーから色を拾う
+        var imageLayer = document.getElementById("imageLayer");
+            if(!imageLayer || !imageLayer.getContext){
+            return false;
+        }
+        var imageLayerCtx = imageLayer.getContext("2d");
+        
+          var imagedata = imageLayerCtx.getImageData(x, y, 1, 1);
+          //  RGBAの取得
+        var r = imagedata.data[0];
+        var g = imagedata.data[1];
+        var b = imagedata.data[2];
+        var a = imagedata.data[3];
+          
+        return RGB2bgColor(r,g,b);
+      
+      }
+      
+          // RGBからffffff形式へ変換する
+          function RGB2bgColor(r,g,b) {
+ 
+            r = r.toString(16);
+            if (r.length == 1) r = "0" + r;
+ 
+            g = g.toString(16);
+            if (g.length == 1) g = "0" + g;
+         
+            b = b.toString(16);
+            if (b.length == 1) b = "0" + b;
+         
+            return r + g + b;  
+       }
+       function timeStamp(){
+           var currentDate = new Date();
+           if(drawMode == 0 || drawMode == 1){
+               drawData = drawData + "#" + currentDate.toLocaleString() + "\n"
+           }else{
+               paintData = paintData + "#" + currentDate.toLocaleString() + "\n"
+           }
+       }
+              
+    </script>
+    <p><pre id="drawData"></pre></p>
+</body>
+</html>
