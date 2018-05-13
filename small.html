@@ -186,12 +186,14 @@
                     mouse.isDrawing = false;
                 //    drawData = drawData + ",-1\n";
                     //document.getElementById("drawData").innerHTML = drawData;
-                    var drawDataObj = {color: penColor , drawData:curDrawData}
-                    if(drawMode == DMODE_LINE){
-                        drawDataList.push(drawDataObj);
-                    }else{
-                        afterDrawDataList.push(drawDataObj);
-                    }
+                    if(curDrawData.length > 0){
+	                    var drawDataObj = {color: penColor , drawData:curDrawData}
+	                    if(drawMode == DMODE_LINE){
+	                        drawDataList.push(drawDataObj);
+	                    }else{
+	                        afterDrawDataList.push(drawDataObj);
+	                    }
+	                }
                     curDrawData = [];
                     redraw();
                 }
@@ -267,12 +269,14 @@
                 mouse.isDrawing = false;
                 //drawData = drawData + ",-1\n";
                 //document.getElementById("drawData").innerHTML = drawData;
-                var drawDataObj = {color: penColor , drawData:curDrawData}
-                if(drawMode == DMODE_LINE){
-                    drawDataList.push(drawDataObj);
-                }else{
-                    afterDrawDataList.push(drawDataObj);
-                }
+                if(curDrawData.length > 0){
+	                var drawDataObj = {color: penColor , drawData:curDrawData}
+	                if(drawMode == DMODE_LINE){
+	                    drawDataList.push(drawDataObj);
+	                }else{
+	                    afterDrawDataList.push(drawDataObj);
+	                }
+	            }
                 curDrawData = [];
                 redraw();
              }
@@ -289,9 +293,10 @@
             return false;
           }
           var ctx = canvas.getContext('2d');
-//          drawData = "";
- //         paintData = "";
- //TODO:LISTクリア
+          drawDataList = []; //線のリスト list[color, list[位置x,y]]
+          paintDataList = []; //ペイントデータのリスト。list[color, 位置x,y]
+          afterDrawDataList = [];//ペイント後に引く線のリスト list[color, list[位置x,y]]
+          curDrawData = []; //現在の線のリスト
           //document.getElementById("drawData").innerHTML = drawData;
           ctx.clearRect(0, 0, 640, 480);
       }
