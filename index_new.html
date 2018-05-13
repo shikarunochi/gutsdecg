@@ -167,7 +167,7 @@
                 curDrawData = [];
                 var point = [Math.round(mouse.x),Math.round(mouse.y)];
                 curDrawData.push(point);
-                window.alert("mouse down x:" + mouse.x + " y:" + mouse.y)
+                //window.alert("mouse down x:" + mouse.x + " y:" + mouse.y)
                 //document.getElementById("drawData").innerHTML = drawData;
             }else{
                 //PAINT情報を付与
@@ -215,9 +215,9 @@
             if(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE){
                 mouse.isDrawing = true;
                 curDrawData = [];
-                var point = [Math.round(mouse.x),Math.round(mouse.y)];
-                curDrawData.push(point);
-                window.alert("touch start x:" + mouse.x + " y:" + mouse.y)
+                //var point = [Math.round(mouse.x),Math.round(mouse.y)];
+                //curDrawData.push(point);
+                //window.alert("touch start x:" + mouse.x + " y:" + mouse.y)
                 //document.getElementById("drawData").innerHTML = drawData;
             }else{
                 //PAINT情報を付与
