@@ -32,6 +32,7 @@
     <p><input type="button" onClick="clearData()" value="消去" />
   
   <input type="file" name="imageFile" id="imageFile">
+  <input type="button" onClick="execCopy()" value="クリップボードへコピー"/>
   </p>
      <div id="simpleMenu" class="menu" style="background:#ffeeee; padding:10px; border:1px solid #ff0000; border-radius:10px; width:600px; ">
         <div id="LINE_BUTTON" class="selected_btn" onclick="changeLINE()"> 線を引く </div>
@@ -56,8 +57,8 @@
     </div>
   <br/>
   
-  <input type="button" onClick="execCopy()" value="クリップボードへコピー"/>
-  <br/><br/>
+  
+  
   <div class="content">
 	<div class="canvas">
 		<canvas id="imageLayer" width="640" height="480"></canvas>
@@ -521,6 +522,10 @@
        }
         
        function spoitON(){
+        if(isSpoit == true){
+            spoitOFF();
+            return;
+        }
         isSpoit = true;
         var canvas = document.getElementById('mycanvas');
         canvas.style.cursor = 'crosshair'
@@ -647,6 +652,7 @@
       function setColor(color){
           penColor = color;
           selectedColorObj.style.backgroundColor = '#' + color;
+          spoitOFF();
       }  
               
     </script>
