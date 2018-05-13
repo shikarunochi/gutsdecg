@@ -150,6 +150,10 @@
 
           //5.ポインタを押したら、描画OK(myDrawをtrue)
           canvas.addEventListener("mousedown", function(e){
+            var rect = e.target.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left - borderWidth;
+            mouse.y = e.clientY - rect.top - borderWidth;
+
             if(isSpoit){
                 //スポイトモード
                 setColor(getColor(mouse.x,mouse.y));
