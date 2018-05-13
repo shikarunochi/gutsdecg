@@ -167,7 +167,7 @@
                 curDrawData = [];
                 var point = [Math.round(mouse.x),Math.round(mouse.y)];
                 curDrawData.push(point);
-                window.alert("x:" + mouse.x + " y:" + mouse.y)
+                window.alert("mouse down x:" + mouse.x + " y:" + mouse.y)
                 //document.getElementById("drawData").innerHTML = drawData;
             }else{
                 //PAINT情報を付与
@@ -203,8 +203,8 @@
           
           canvas.addEventListener("touchstart", function(e){
             var rect = e.target.getBoundingClientRect();
-            mouse.startX = e.touches[0].clientX - rect.left - borderWidth;
-            mouse.startY = e.touches[0].clientY - rect.top - borderWidth;
+            mouse.x = e.clientX - rect.left - borderWidth;
+            mouse.y = e.clientY - rect.top - borderWidth;
 
             if(isSpoit){
                 //スポイトモード
@@ -215,12 +215,13 @@
             if(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE){
                 mouse.isDrawing = true;
                 curDrawData = [];
-                var point = [Math.round(mouse.startX),Math.round(mouse.startX)];
+                var point = [Math.round(mouse.x),Math.round(mouse.y)];
                 curDrawData.push(point);
+                window.alert("touch start x:" + mouse.x + " y:" + mouse.y)
                 //document.getElementById("drawData").innerHTML = drawData;
             }else{
                 //PAINT情報を付与
-                paint(mouse.startX,mouse.startY)
+                paint(mouse.x,mouse.y)
             }
           });
         
