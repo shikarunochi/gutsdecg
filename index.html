@@ -386,7 +386,9 @@
                     }
                     drawString = drawString + "-1\n";
                 }
+                drawString = drawString + "-1\n";
             }
+            
             //PaintData
             if(paintDataList.length > 0){
                 drawString = drawString + "-20,";
@@ -395,7 +397,7 @@
                 var color = paintDataObj[0];
                 var x =  paintDataObj[1];
                 var y =  paintDataObj[2];
-                drawString = drawString + paintDataObj[0] + "," + paintDataObj[1] + "," + paintDataObj[2] + ",-1\n";
+                drawString = drawString + "0x" + paintDataObj[0] + "," + paintDataObj[1] + "," + paintDataObj[2] + ",-1\n";
                 }
                 drawString = drawString + "-1\n";
             }
