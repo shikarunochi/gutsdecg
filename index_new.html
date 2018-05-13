@@ -95,7 +95,7 @@
     var paintButtonObj = document.getElementById('PAINT_BUTTON');
     var afterLineButtonObj = document.getElementById('AFTER_LINE_BUTTON');
     var selectedColorObj = document.getElementById('SELECTED_COLOR');
-    
+    var spoitButtonObj = document.getElementById('SPOIT_BUTTON');
     
       (function(){
         window.onload = function(){
@@ -204,8 +204,8 @@
           
           canvas.addEventListener("touchstart", function(e){
             var rect = e.target.getBoundingClientRect();
-            mouse.x = e.clientX - rect.left - borderWidth;
-            mouse.y = e.clientY - rect.top - borderWidth;
+            mouse.x = e.touches[0].clientX - rect.left - borderWidth;
+            mouse.y = e.touches[0].clientY - rect.top - borderWidth;
             mouse.startX = mouse.x
             mouse.startY = mouse.y
             if(isSpoit){
@@ -217,8 +217,8 @@
             if(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE){
                 mouse.isDrawing = true;
                 curDrawData = [];
-                //var point = [Math.round(mouse.x),Math.round(mouse.y)];
-                //curDrawData.push(point);
+                var point = [Math.round(mouse.x),Math.round(mouse.y)];
+                curDrawData.push(point);
                 //window.alert("touch start x:" + mouse.x + " y:" + mouse.y)
                 //document.getElementById("drawData").innerHTML = drawData;
             }else{
@@ -522,9 +522,11 @@
         isSpoit = true;
         var canvas = document.getElementById('mycanvas');
         canvas.style.cursor = 'crosshair'
+        spoitButtonObj.className = "selected_btn";
        }
        function spoitOFF(){
         isSpoit = false;
+        spoitButtonObj.className = "normal_btn";
         var canvas = document.getElementById('mycanvas');
         canvas.style.cursor = 'default'
        }
