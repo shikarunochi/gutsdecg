@@ -9,12 +9,14 @@ div.normal_btn{
     text-align: center;
     border-radius: 3px;
     box-shadow: 1px 2px 4px #d4842c;
+    user-select: none;
 }
 div.normal_btn:active{  /* クリック時の設定 */
     -ms-transform: translateY(2px);
     -webkit-transform: translateY(2px);
     transform: translateY(2px);
     box-shadow:none;
+    user-select: none;
 }
 
 div.selected_btn{
@@ -28,6 +30,7 @@ div.selected_btn{
     text-align: center;
     border-radius: 3px;
     box-shadow: 1px 2px 4px #d4842c;
+    user-select: none;
 }
 
 div.selected_color{
@@ -35,6 +38,7 @@ div.selected_color{
     height: 35px;
     width: 35px;
     text-decoration: none;
+    user-select: none;
 }
 
 .menu a{
@@ -42,11 +46,13 @@ div.selected_color{
     margin : 10px ;
     padding : 2px ;
     text-align: center;
+    user-select: none;
 }
 .menu div{
     display: inline;
     margin : 10px ;
     padding : 2px ;
     text-align: center;
+    user-select: none;
 }
 
