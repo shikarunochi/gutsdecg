@@ -23,6 +23,7 @@
         position: absolute;
         top: 0px;
         left: 0px;
+        user-select: none;
     }
 	</style>
 </head>
@@ -205,7 +206,8 @@
             var rect = e.target.getBoundingClientRect();
             mouse.x = e.clientX - rect.left - borderWidth;
             mouse.y = e.clientY - rect.top - borderWidth;
-
+            mouse.startX = mouse.x
+            mouse.startY = mouse.y
             if(isSpoit){
                 //スポイトモード
                 setColor(getColor(mouse.x,mouse.y));
