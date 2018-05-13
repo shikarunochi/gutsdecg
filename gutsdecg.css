@@ -1,4 +1,4 @@
-a.normal_btn{
+div.normal_btn{
     display: block;
     height: 350px;
     width: 120px;
@@ -10,14 +10,14 @@ a.normal_btn{
     border-radius: 3px;
     box-shadow: 1px 2px 4px #d4842c;
 }
-a.normal_btn:active{  /* クリック時の設定 */
+div.normal_btn:active{  /* クリック時の設定 */
     -ms-transform: translateY(2px);
     -webkit-transform: translateY(2px);
     transform: translateY(2px);
     box-shadow:none;
 }
 
-a.selected_btn{
+div.selected_btn{
     display: block;
     height: 35px;
     width: 120px;
@@ -30,7 +30,7 @@ a.selected_btn{
     box-shadow: 1px 2px 4px #d4842c;
 }
 
-a.selected_color{
+div.selected_color{
     display: block;
     height: 35px;
     width: 35px;
@@ -43,3 +43,10 @@ a.selected_color{
     padding : 2px ;
     text-align: center;
 }
+.menu div{
+    display: inline;
+    margin : 10px ;
+    padding : 2px ;
+    text-align: center;
+}
+
