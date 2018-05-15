@@ -1,6 +1,6 @@
 // http://jsdo.it/imaya/seedfill
 //
-// Œ³ƒAƒ‹ƒSƒŠƒYƒ€: http://fussy.web.fc2.com/algo/algo3-2.htm
+// å…ƒã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ : http://fussy.web.fc2.com/algo/algo3-2.htm
 // JavaScript implementation - 2013 imaya
 //
 
@@ -133,14 +133,14 @@ CanvasFillAlgorithm.prototype.scanLine = function(xLeft, xRight, y, yParent, col
   var data;
 
   while (xLeft <= xRight) {
-    // ”ñ—ÌˆæF‚ð”ò‚Î‚·
+    // éžé ˜åŸŸè‰²ã‚’é£›ã°ã™
     for (; xLeft < xRight; xLeft++) {
       if (this.equalsColors(this.point(buffer, xLeft, y, width), color)) {
         break;
       }
     }
 
-    // Šù‚É“h‚Á‚Ä‚ ‚Á‚½‚ç”ò‚Î‚·
+    // æ—¢ã«å¡—ã£ã¦ã‚ã£ãŸã‚‰é£›ã°ã™
     if (!this.equalsColors(this.point(buffer, xLeft, y, width), color)) {
       break;
     }
@@ -148,7 +148,7 @@ CanvasFillAlgorithm.prototype.scanLine = function(xLeft, xRight, y, yParent, col
     data = {};
     data.xLeft = xLeft;
 
-    // —ÌˆæF‚ð”ò‚Î‚·
+    // é ˜åŸŸè‰²ã‚’é£›ã°ã™
     for (; xLeft <= xRight ; xLeft++) {
       if (!this.equalsColors(this.point(buffer, xLeft, y, width), color)) {
         break;
@@ -194,7 +194,7 @@ CanvasFillAlgorithm.prototype.paint = function(x, y, paintColor) {
   /** @type {number} */
   var i;
 
-  // —ÌˆæF‚Æ•`‰æF‚ª“™‚µ‚¯‚ê‚Îˆ—•s—v
+  // é ˜åŸŸè‰²ã¨æç”»è‰²ãŒç­‰ã—ã‘ã‚Œã°å‡¦ç†ä¸è¦
   if (this.equalsColors(targetColor, paintColor)) {
     return;
   }

@@ -55,3 +55,14 @@ div.selected_color{
     text-align: center;
     user-select: none;
 }
+
+.menu label {
+    color: #fff; 
+    background-color:#fdc689;
+    margin : 10px ;
+    padding: 2px;
+    line-height: 37px;
+    text-align: center;
+    border-radius: 3px;
+    box-shadow: 1px 2px 4px #d4842c;
+}
