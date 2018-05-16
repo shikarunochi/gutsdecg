@@ -142,7 +142,9 @@
             //2.ポインタが動いたら座標値を取得
                 var rect = e.target.getBoundingClientRect();
                 mouse.x = e.clientX - rect.left - borderWidth;
+                if(mouse.x < 0){mouse.x = 0;}
                 mouse.y = e.clientY - rect.top - borderWidth;
+                if(mouse.y < 0){mouse.y = 0;}
                 /*
                 pageX[Y], offsetLeft[Top]を使う場合
                 mouse.x = e.pageX - canvas.offsetLeft - borderWidth;
@@ -176,7 +178,9 @@
           canvas.addEventListener("mousedown", function(e){
             var rect = e.target.getBoundingClientRect();
             mouse.x = e.clientX - rect.left - borderWidth;
+            if(mouse.x < 0){mouse.x = 0;}
             mouse.y = e.clientY - rect.top - borderWidth;
+            if(mouse.y < 0){mouse.y = 0;}
 
             if(isSpoit){
                 //スポイトモード
@@ -231,6 +235,9 @@
             var rect = e.target.getBoundingClientRect();
             mouse.x = e.touches[0].clientX - rect.left - borderWidth;
             mouse.y = e.touches[0].clientY - rect.top - borderWidth;
+            if(mouse.x < 0){mouse.x = 0;}
+            if(mouse.y < 0){mouse.y = 0;}
+            
             mouse.startX = mouse.x
             mouse.startY = mouse.y
             if(isSpoit){
@@ -258,7 +265,9 @@
                 var rect = e.target.getBoundingClientRect();
                 mouse.x = e.touches[0].clientX - rect.left - borderWidth;
                 mouse.y = e.touches[0].clientY - rect.top - borderWidth;
-
+                if(mouse.x < 0){mouse.x = 0;}
+                if(mouse.y < 0){mouse.y = 0;}
+                
                 if(isSpoit==false &&(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE)){
                      ctx.beginPath();
                      ctx.moveTo(mouse.startX, mouse.startY);
@@ -473,13 +482,13 @@
         if(window.navigator.msSaveBlob)
         {
             // IEなら独自関数を使います。
-            window.navigator.msSaveBlob(blob, "pccgdata" + getNowYMDHMS() + ".txt");
+            window.navigator.msSaveBlob(blob, "pccgdata" + getNowYMDHMS() + ".dat");
         } else {
             // それ以外はaタグを利用してイベントを発火させます
             var a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
             a.target = '_blank';
-            a.download = "pccgdata" + getNowYMDHMS() + ".txt";
+            a.download = "pccgdata" + getNowYMDHMS() + ".dat";
             a.click();
     }
 
