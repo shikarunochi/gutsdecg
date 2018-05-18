@@ -34,18 +34,17 @@
       <!-- fileボタンの装飾 https://qiita.com/yasumodev/items/c9f8e8f588ded6b179c9-->
     <div id="fileMemu" class="menu" style="background:#ffeeee; padding:10px; border:1px solid #00ff00; border-radius:10px; width:600px; ">
         <div id="CLEAR_DATA" class="normal_btn" onclick="clearData()"> データ消去 </div>
-    </div>
+        <label for="imageFile">
+            参考画像読み込み<input type="file" name="imageFile" id="imageFile" style="display:none;">
+         </label>
+         <label for="dataFile">
+            データファイルを読み込み<input type="file" name="dataFile" id="dataFile" style="display:none;">
+         </label>
+        </div>
 
     <div id="fileMemu" class="menu" style="background:#ffeeee; padding:10px; border:1px solid #00ff00; border-radius:10px; width:600px; ">
         <div id="EXEC_COPY" class="normal_btn" onclick="execCopy()"> データをクリップボードにコピー </div>
         <div id="SAVE_DATA" class="normal_btn" onclick="saveData()"> データをファイルに保存 </div>
-        <br/><br/>
-        <label for="dataFile">
-            データファイルを読み込み<input type="file" name="dataFile" id="dataFile" style="display:none;">
-         </label>
-         <label for="imageFile">
-            参考画像読み込み<input type="file" name="imageFile" id="imageFile" style="display:none;">
-         </label>
      </div>
 
   <br/>
@@ -54,13 +53,14 @@
         <div id="LINE_BUTTON" class="selected_btn" onclick="changeLINE()"> 線を引く </div>
         <div id="PAINT_BUTTON" class="normal_btn" onclick="changePAINT()"> 色塗りポイント追加 </div>
         <div id="AFTER_LINE_BUTTON" class="normal_btn" onclick="changeAFTERLINE()"> 色塗り後の線を引く </div>
+        <div id="CHANGE_DELETE_BUTTON" class="sp_normal_btn" onclick="changeDeleteMode()"> 削除 </div>
     </div>
     <br/>
     <div id="advancedMenu"  class="menu" style="background:#ffeeee; padding:10px; border:1px solid #ff0000; border-radius:10px;width:600px;">
         <div id="SELECTED_COLOR" class="selected_color" style="background:#000000; border:1px solid #000000;width:20px">　</div>
-        <div id="SPOIT_BUTTON" class="normal_btn" onclick="spoitON()"> 見本画像の色を取得 </div>
-        <div id="PAINT_FILL_BUTTON" class="normal_btn" onclick="changePaintFillMode()"> 塗りつぶしモード </div>
-        <div id="SPOIT_BUTTON" class="normal_btn" onclick="undo()"> UNDO </div>
+        <div id="SPOIT_BUTTON" class="normal_btn" onclick="spoitON()"> 画像の色を取得 </div>
+        <div id="PAINT_FILL_BUTTON" class="normal_btn" onclick="changePaintFillMode()"> 塗らないモード </div>
+        <div id="UNDO_BUTTON" class="normal_btn" onclick="undo()"> UNDO[線を引く] </div>
     </div>
     <div id="simpleMenu" class="menu" style="background:#ffeeee; padding:10px; border:1px solid #ff0000; border-radius:10px;width:600px;">
             <div class="selected_color" style="background:#000000; border:1px solid #000000;width:20px" onclick="setColor('000000')">　</div>
@@ -105,6 +105,7 @@
     var isSpoit = false; //スポイトモード
     var isPaintFill = false; //ペイント塗りつぶしモード
     var colorMode = SELECTED_COLOR;
+    var isDelete = false;//削除モード
 
     var imageFileForm = document.getElementById('imageFile');
     imageFileForm.addEventListener('change', loadImage, false);
@@ -118,7 +119,10 @@
     var selectedColorObj = document.getElementById('SELECTED_COLOR');
     var spoitButtonObj = document.getElementById('SPOIT_BUTTON');
     var paintFillButtonButtonObj = document.getElementById('PAINT_FILL_BUTTON');
-    
+    var undoButtonObj = document.getElementById('UNDO_BUTTON');
+    var changeDeleteButtonObj = document.getElementById('CHANGE_DELETE_BUTTON');
+
+
     var smallMode = false;
       (function(){
         window.onload = function(){
@@ -152,7 +156,7 @@
                 */
 
             //4.isDrawがtrueのとき描画
-                if (isSpoit == false && mouse.isDrawing && (drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE)){
+                if (isDelete == false && isSpoit == false && mouse.isDrawing && (drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE)){
                     ctx.beginPath();
                     ctx.moveTo(mouse.startX, mouse.startY);
                     ctx.lineTo(mouse.x, mouse.y);
@@ -187,6 +191,11 @@
                 setColor(getColor(mouse.x,mouse.y));
                 return;
             }
+            if(isDelete){
+                //該当のポイントを消す処理
+                deletePoint(mouse.x, mouse.y);
+                return;
+            }
             if(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE){
                 mouse.isDrawing = true;
                 mouse.startX = mouse.x;
@@ -207,6 +216,9 @@
                 if(isSpoit){
                     //スポイトモード
                     spoitOFF();                    
+                    return;
+                }
+                if(isDelete){
                     return;
                 }
                 if(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE){
@@ -243,7 +255,11 @@
             if(isSpoit){
                 //スポイトモード
                 setColor(getColor(mouse.x,mouse.y));
-                spoitOFF();
+                return;
+            }
+            if(isDelete){
+                //該当のポイントを消す処理
+                deletePoint(mouse.x, mouse.y);
                 return;
             }
             if(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE){
@@ -268,7 +284,7 @@
                 if(mouse.x < 0){mouse.x = 0;}
                 if(mouse.y < 0){mouse.y = 0;}
                 
-                if(isSpoit==false &&(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE)){
+                if(isDelete == false && isSpoit==false &&(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE)){
                      ctx.beginPath();
                      ctx.moveTo(mouse.startX, mouse.startY);
                      ctx.lineTo(mouse.x, mouse.y);
@@ -297,6 +313,9 @@
                 spoitOFF();                    
                 return;
             }
+            if(isDelete){
+                return;
+            }
               if(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE){
                 mouse.isDrawing = false;
                 //drawData = drawData + ",-1\n";
@@ -314,9 +333,9 @@
              }
           });          
         }
-      })();
+    })();
       
-      function clearData(){
+    function clearData(){
               if(!window.confirm("描画データをクリアしますか？")){
                   return
               }
@@ -331,69 +350,69 @@
           curDrawData = []; //現在の線のリスト
           //document.getElementById("drawData").innerHTML = drawData;
           ctx.clearRect(0, 0, 640, 480);
-      }
-      function loadImage(e){
+    }
+    function loadImage(e){
       //https://www.tam-tam.co.jp/tipsnote/javascript/post13538.html ローカルファイルのロード
       //https://qiita.com/PG0721/items/599ba2921b8339700fe3 アスペクト比保持読み込み
 
           //元の画像を保持したまま、表示色を薄くするためのアルファレイヤー
-            var alphaLayer = document.getElementById("alphaLayer");
+        var alphaLayer = document.getElementById("alphaLayer");
             if(!alphaLayer || !alphaLayer.getContext){
             return false;
-          }
-          var aplhaLayerCtx = alphaLayer.getContext("2d");
-          aplhaLayerCtx.globalAlpha = 0.7;
-          aplhaLayerCtx.fillStyle = "white";
-          aplhaLayerCtx.clearRect(0, 0, 640, 480);
-          aplhaLayerCtx.fillRect(0, 0, aplhaLayerCtx.canvas.width, aplhaLayerCtx.canvas.height);
+        }
+        var aplhaLayerCtx = alphaLayer.getContext("2d");
+        aplhaLayerCtx.globalAlpha = 0.7;
+        aplhaLayerCtx.fillStyle = "white";
+        aplhaLayerCtx.clearRect(0, 0, 640, 480);
+        aplhaLayerCtx.fillRect(0, 0, aplhaLayerCtx.canvas.width, aplhaLayerCtx.canvas.height);
 
-            var imageLayer = document.getElementById("imageLayer");
-            if(!imageLayer || !imageLayer.getContext){
+        var imageLayer = document.getElementById("imageLayer");
+        if(!imageLayer || !imageLayer.getContext){
             return false;
-          }
-          var imageLayerCtx = imageLayer.getContext("2d");
+        }
+        var imageLayerCtx = imageLayer.getContext("2d");
 
             // ファイル情報を取得
-            var fileData = e.target.files[0];
+        var fileData = e.target.files[0];
                 // 画像ファイル以外は処理を止める
-            if(!fileData.type.match('image.*')) {
+        if(!fileData.type.match('image.*')) {
             alert('画像を選択してください');
-                return;
+            return;
+        }
+            
+        // FileReaderオブジェクトを使ってファイル読み込み
+        var reader = new FileReader();
+        var img = new Image();
+        reader.onload = function() {
+              img.src = reader.result;
+        }
+            
+        /* 画像が読み込まれるのを待ってから処理を続行 */
+        img.onload = function() {
+            var canvasAspect = imageLayerCtx.canvas.width / imageLayerCtx.canvas.height, // canvasのアスペクト比
+            imgAspect = img.width / img.height, // 画像のアスペクト比
+            left, top, width, height;
+
+            imageLayerCtx.fillStyle = "black";
+            imageLayerCtx.fillRect(0, 0, imageLayerCtx.canvas.width, imageLayerCtx.canvas.height);
+
+            if(imgAspect >= canvasAspect) {// 画像が横長
+                left = 0;
+                width = imageLayerCtx.canvas.width;
+                height = imageLayerCtx.canvas.width / imgAspect;
+                top = (imageLayerCtx.canvas.height - height) / 2;
+            } else {// 画像が縦長
+                top = 0;
+                height = imageLayerCtx.canvas.height;
+                width = imageLayerCtx.canvas.height * imgAspect;
+                left = (imageLayerCtx.canvas.width - width) / 2;
             }
+            imageLayerCtx.drawImage(img, 0, 0, img.width, img.height, 
+                left, top, width, height);
             
-            // FileReaderオブジェクトを使ってファイル読み込み
-            var reader = new FileReader();
-            var img = new Image();
-            reader.onload = function() {
-                  img.src = reader.result;
-              }
-            
-           /* 画像が読み込まれるのを待ってから処理を続行 */
-            img.onload = function() {
-                var canvasAspect = imageLayerCtx.canvas.width / imageLayerCtx.canvas.height, // canvasのアスペクト比
-                imgAspect = img.width / img.height, // 画像のアスペクト比
-                left, top, width, height;
-
-                imageLayerCtx.fillStyle = "black";
-                imageLayerCtx.fillRect(0, 0, imageLayerCtx.canvas.width, imageLayerCtx.canvas.height);
-
-                if(imgAspect >= canvasAspect) {// 画像が横長
-                    left = 0;
-                    width = imageLayerCtx.canvas.width;
-                    height = imageLayerCtx.canvas.width / imgAspect;
-                    top = (imageLayerCtx.canvas.height - height) / 2;
-                } else {// 画像が縦長
-                    top = 0;
-                    height = imageLayerCtx.canvas.height;
-                    width = imageLayerCtx.canvas.height * imgAspect;
-                    left = (imageLayerCtx.canvas.width - width) / 2;
-                }
-                imageLayerCtx.drawImage(img, 0, 0, img.width, img.height, 
-                    left, top, width, height);
-                
-            };
-            reader.readAsDataURL(fileData);
-      }
+        };
+        reader.readAsDataURL(fileData);
+    }
 
       function makeCGData(){
               var drawString = "640,480,0xFFFFFF,0\n";
@@ -451,9 +470,9 @@
                 drawString = drawString + "-1\n";
             }
             return drawString;
-      }
+    }
 
-      function execCopy(){
+    function execCopy(){
               //https://qiita.com/simiraaaa/items/2e7478d72f365aa48356
             drawString = makeCGData();
             var temp = document.createElement('div');
@@ -469,8 +488,8 @@
 
               document.body.removeChild(temp);
               // true なら実行できている falseなら失敗か対応していないか
-              return result;
-        }
+        return result;
+    }
 
 
     //http://blog.fagai.net/2014/08/09/javascript-only-save/
@@ -490,7 +509,7 @@
             a.target = '_blank';
             a.download = "pccgdata" + getNowYMDHMS() + ".dat";
             a.click();
-    }
+        }
 
     }
 
@@ -619,6 +638,7 @@
         lineButtonObj.className = "selected_btn";
         paintButtonObj.className = "normal_btn" ;
         afterLineButtonObj.className = "normal_btn" ;
+        undoButtonObj.innerHTML=" UNDO[線を引く] "
         spoitOFF();                    
     }
     function changePAINT(){
@@ -628,6 +648,7 @@
         lineButtonObj.className = "normal_btn";
         paintButtonObj.className = "selected_btn" ;
         afterLineButtonObj.className = "normal_btn" ;
+        undoButtonObj.innerHTML=" UNDO[色塗り] "
         spoitOFF();                    
     }
     function changeAFTERLINE(){
@@ -637,10 +658,11 @@
         lineButtonObj.className = "normal_btn";
         paintButtonObj.className = "normal_btn" ;
         afterLineButtonObj.className = "selected_btn" ;
+        undoButtonObj.innerHTML=" UNDO[後の線] "
         spoitOFF();                    
     }
 
-      function paint(x,y){
+    function paint(x,y){
         x = Math.floor(x);
         y = Math.floor(y);
         //paintColor = getColor(x, y);
@@ -661,32 +683,48 @@
 //        ctx.fillStyle = "#" + paintColor;
 //        ctx.arc(x, y, 2, 0, Math.PI*2, false);
 //        ctx.fill();
-      }
+    }
       
-      function getColor(x,y){ //https://www.petitmonte.com/javascript/get_image_color.html
-          //画像レイヤーから色を拾う
+      //スポイトだけで使う前提！
+    function getColor(x,y){ //https://www.petitmonte.com/javascript/get_image_color.html
+        //最初に画像レイヤーから色を拾う
+        var canvas = document.getElementById('mycanvas');
+        if(!canvas || !canvas.getContext){
+            return '000000';
+        }
+        var ctx = canvas.getContext("2d");
+
+        var canvasdata = ctx.getImageData(x, y, 1, 1);
+          //  RGBAの取得
+        var r = canvasdata.data[0];
+        var g = canvasdata.data[1];
+        var b = canvasdata.data[2];
+        var a = canvasdata.data[3];
+        if(a+g+b+a > 0){//画像レイヤーに色が塗ってある場所ならその色を返す
+            return RGB2bgColor(r,g,b);    
+        }
+
         var imageLayer = document.getElementById("imageLayer");
             if(!imageLayer || !imageLayer.getContext){
             return '000000';
         }
         var imageLayerCtx = imageLayer.getContext("2d");
         
-          var imagedata = imageLayerCtx.getImageData(x, y, 1, 1);
+        var imagedata = imageLayerCtx.getImageData(x, y, 1, 1);
           //  RGBAの取得
-        var r = imagedata.data[0];
-        var g = imagedata.data[1];
-        var b = imagedata.data[2];
-        var a = imagedata.data[3];
+        r = imagedata.data[0];
+        g = imagedata.data[1];
+        b = imagedata.data[2];
+        a = imagedata.data[3];
           
         return RGB2bgColor(r,g,b);
       
-      }
+    }
       
           // RGBからffffff形式へ変換する
-          function RGB2bgColor(r,g,b) {
- 
-            r = r.toString(16);
-            if (r.length == 1) r = "0" + r;
+    function RGB2bgColor(r,g,b) {
+        r = r.toString(16);
+        if (r.length == 1) r = "0" + r;
  
             g = g.toString(16);
             if (g.length == 1) g = "0" + g;
@@ -695,17 +733,18 @@
             if (b.length == 1) b = "0" + b;
          
             return r + g + b;  
-       }
-       function timeStamp(){
+    }
+    
+    function timeStamp(){
            var currentDate = new Date();
            if(drawMode == 0 || drawMode == 1){
                drawData = drawData + "#" + currentDate.toLocaleString() + "\n"
            }else{
                paintData = paintData + "#" + currentDate.toLocaleString() + "\n"
            }
-       }
+    }
         
-       function spoitON(){
+    function spoitON(){
         if(isSpoit == true){
             spoitOFF();
             return;
@@ -714,25 +753,50 @@
         var canvas = document.getElementById('mycanvas');
         canvas.style.cursor = 'crosshair'
         spoitButtonObj.className = "selected_btn";
-       }
-       function spoitOFF(){
+        spoitButtonObj.innerHTML = " 色を取得中！ "
+    }
+    
+    function spoitOFF(){
         isSpoit = false;
         spoitButtonObj.className = "normal_btn";
         var canvas = document.getElementById('mycanvas');
         canvas.style.cursor = 'default'
-       }
-       function changePaintFillMode(){
+        spoitButtonObj.innerHTML = " 画像の色を取得 "
+    }
+
+    function changeDeleteMode(){
+        if (isDelete){
+            changeDeleteButtonObj.className = "sp_normal_btn";
+            isDelete = false;
+            lineButtonObj.innerHTML = " 線を引く ";
+            paintButtonObj.innerHTML = " 色塗りポイント追加 ";
+            afterLineButtonObj.innerHTML = " 色塗り後の線を引く ";
+        }else{
+            changeDeleteButtonObj.className = "sp_selected_btn";
+            isDelete = true;
+            lineButtonObj.innerHTML = " 線を消す ";
+            paintButtonObj.innerHTML = " 色塗りポイント削除 ";
+            afterLineButtonObj.innerHTML = " 色塗り後の線を消す ";
+        }
+    }
+    
+    function changePaintFillMode(){
        		if(isPaintFill){
        			isPaintFill = false;
        			paintFillButtonButtonObj.className = "normal_btn";
+                paintFillButtonButtonObj.innerHTML=" 塗らないモード " 
        		}else{
        			isPaintFill = true;
        			paintFillButtonButtonObj.className = "selected_btn";
+                paintFillButtonButtonObj.innerHTML=" 塗りつぶしモード " 
        		}
        		redraw();
-       }
+    }
     
        function undo(){
+           if(isDelete){
+               return;//Deleteモード中はUndo不可
+           }
        	//モードによってどれから消すか。
         switch(drawMode){
             case DMODE_LINE:
@@ -895,16 +959,94 @@
 
     
     function getNowYMDHMS(){
-    var dt = new Date();
-    var y = dt.getFullYear();
-    var m = ("0" + (dt.getMonth()+1)).slice(-2);
-    var d = ("0" + dt.getDate()).slice(-2);
-    var h = ("0" + dt.getHours()).slice(-2);
-    var mi = ("0" + dt.getMinutes()).slice(-2);
-    var s =  ('0' + dt.getSeconds()).slice(-2);
-    var result = y + m + d + h + mi + s;
-    return result;
-}
+        var dt = new Date();
+        var y = dt.getFullYear();
+        var m = ("0" + (dt.getMonth()+1)).slice(-2);
+        var d = ("0" + dt.getDate()).slice(-2);
+        var h = ("0" + dt.getHours()).slice(-2);
+        var mi = ("0" + dt.getMinutes()).slice(-2);
+        var s =  ('0' + dt.getSeconds()).slice(-2);
+        var result = y + m + d + h + mi + s;
+        return result;
+    }
+
+    function deletePoint(x,y){
+        if(isDelete == false){
+            return;//念のため
+        }
+
+        var selectedIdx = -1;
+        switch(drawMode){
+            case DMODE_LINE:
+           		if(drawDataList.length == 0){
+           			return;
+       		    }
+                for(idx = drawDataList.length -1 ;idx >=0; idx--){  //新しいほうから探す
+                    var drawDataObj = drawDataList[idx];
+                    for(lineIdx = 0;lineIdx < drawDataObj.drawData.length;lineIdx++){
+                        var drawPoint = drawDataObj.drawData[lineIdx];
+                        if((drawPoint[0] - 3<= x && x <= drawPoint[0] + 3 )&&
+                        (drawPoint[1] - 3 <= y &&  y <= drawPoint[1] + 3)){
+                            selectedIdx = idx;
+                            break;
+                        }
+                    }
+                    if(selectedIdx != -1){
+                        break;
+                    }
+                }
+                if(selectedIdx != -1){
+                    drawDataList.splice(selectedIdx, 1);
+                }
+
+                break;
+            case DMODE_PAINT:
+                if(paintDataList.length == 0){
+           			return;
+       		    }
+                for(idx = paintDataList.length -1 ;idx >=0; idx--){  //新しいほうから探す
+                    var paintDataObj = paintDataList[idx];
+                    if((paintDataObj[1] - 3<= x && x <= paintDataObj[1] + 3 )&&
+                        (paintDataObj[2] - 3 <= y &&  y <= paintDataObj[2] + 3)){
+                        selectedIdx = idx;
+                        break;
+                    }
+                }
+                if(selectedIdx != -1){
+                    paintDataList.splice(selectedIdx, 1);
+                }
+                break;
+            case DMODE_AFTER_LINE:
+                if(afterDrawDataList.length == 0){
+           			return;
+       		    }
+                for(idx = afterDrawDataList.length -1 ;idx >=0; idx--){  //新しいほうから探す
+                    var drawDataObj = afterDrawDataList[idx];
+                    for(lineIdx = 0;lineIdx < drawDataObj.drawData.length;lineIdx++){
+                        var drawPoint = drawDataObj.drawData[lineIdx];
+                        if((drawPoint[0] - 5<= x && x <= drawPoint[0] + 5 )&& //色はちょっと大きめで探す
+                        (drawPoint[1] - 5 <= y &&  y <= drawPoint[1] + 5)){
+                            selectedIdx = idx;
+                            break;
+                        }
+                    }
+                    if(selectedIdx != -1){
+                        break;
+                    }
+                }
+                if(selectedIdx != -1){
+                    afterDrawDataList.splice(selectedIdx, 1);
+                }
+
+                break;
+        }
+        redraw();
+
+
+
+
+    }
+
     </script>
     <p><pre id="drawData"></pre></p>
     <hr/>
