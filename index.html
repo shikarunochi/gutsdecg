@@ -34,12 +34,13 @@
       <!-- fileボタンの装飾 https://qiita.com/yasumodev/items/c9f8e8f588ded6b179c9-->
     <div id="fileMemu" class="menu" style="background:#ffeeee; padding:10px; border:1px solid #00ff00; border-radius:10px; width:600px; ">
         <div id="CLEAR_DATA" class="normal_btn" onclick="clearData()"> データ消去 </div>
+        <label for="dataFile">
+            データファイル読込<input type="file" name="dataFile" id="dataFile" style="display:none;">
+         </label>
         <label for="imageFile">
-            参考画像読み込み<input type="file" name="imageFile" id="imageFile" style="display:none;">
-         </label>
-         <label for="dataFile">
-            データファイルを読み込み<input type="file" name="dataFile" id="dataFile" style="display:none;">
-         </label>
+            参考画像読込<input type="file" name="imageFile" id="imageFile" style="display:none;">
+        </label>
+        <div id="IMAGE_ALPHA" class="normal_btn" onclick="changeImageAlpha()"> 50% </div>
         </div>
 
     <div id="fileMemu" class="menu" style="background:#ffeeee; padding:10px; border:1px solid #00ff00; border-radius:10px; width:600px; ">
@@ -62,16 +63,7 @@
         <div id="PAINT_FILL_BUTTON" class="normal_btn" onclick="changePaintFillMode()"> 塗らないモード </div>
         <div id="UNDO_BUTTON" class="normal_btn" onclick="undo()"> UNDO[線を引く] </div>
     </div>
-    <div id="simpleMenu" class="menu" style="background:#ffeeee; padding:10px; border:1px solid #ff0000; border-radius:10px;width:600px;">
-            <div class="selected_color" style="background:#000000; border:1px solid #000000;width:20px" onclick="setColor('000000')">　</div>
-            <div class="selected_color" style="background:#ff0000; border:1px solid #000000;width:20px" onclick="setColor('ff0000')">　</div>
-            <div class="selected_color" style="background:#0000ff; border:1px solid #000000;width:20px" onclick="setColor('0000ff')">　</div>
-            <div class="selected_color" style="background:#ff00ff; border:1px solid #000000;width:20px" onclick="setColor('ff00ff')">　</div>
-            <div class="selected_color" style="background:#00ff00; border:1px solid #000000;width:20px" onclick="setColor('00ff00')">　</div>
-            <div class="selected_color" style="background:#00ffff; border:1px solid #000000;width:20px" onclick="setColor('00ffff')">　</div>
-            <div class="selected_color" style="background:#ffff00; border:1px solid #000000;width:20px" onclick="setColor('ffff00')">　</div>
-            <div class="selected_color" style="background:#ffffff; border:1px solid #000000;width:20px" onclick="setColor('ffffff')">　</div>
-    </div>
+
   <br/>
   
   
@@ -84,8 +76,19 @@
     </div>
     <div class="canvas"><canvas width="640" height="480" id="mycanvas">Canvasに対応したブラウザを用意して下さい。</canvas></div>
   </div>
-  </center>
+
   <div id="info"></div>
+  <div id="simpleMenu" class="menu" style="background:#ffeeee; padding:10px; border:1px solid #ff0000; border-radius:10px;width:600px;">
+    <div class="selected_color" style="background:#000000; border:1px solid #000000;width:20px" onclick="setColor('000000')">　</div>
+    <div class="selected_color" style="background:#ff0000; border:1px solid #000000;width:20px" onclick="setColor('ff0000')">　</div>
+    <div class="selected_color" style="background:#0000ff; border:1px solid #000000;width:20px" onclick="setColor('0000ff')">　</div>
+    <div class="selected_color" style="background:#ff00ff; border:1px solid #000000;width:20px" onclick="setColor('ff00ff')">　</div>
+    <div class="selected_color" style="background:#00ff00; border:1px solid #000000;width:20px" onclick="setColor('00ff00')">　</div>
+    <div class="selected_color" style="background:#00ffff; border:1px solid #000000;width:20px" onclick="setColor('00ffff')">　</div>
+    <div class="selected_color" style="background:#ffff00; border:1px solid #000000;width:20px" onclick="setColor('ffff00')">　</div>
+    <div class="selected_color" style="background:#ffffff; border:1px solid #000000;width:20px" onclick="setColor('ffffff')">　</div>
+</div>
+</center>
 <script>
     //定数
     const DMODE_LINE = 0
@@ -106,6 +109,7 @@
     var isPaintFill = false; //ペイント塗りつぶしモード
     var colorMode = SELECTED_COLOR;
     var isDelete = false;//削除モード
+    var imageAplhaMode = 0;
 
     var imageFileForm = document.getElementById('imageFile');
     imageFileForm.addEventListener('change', loadImage, false);
@@ -121,7 +125,8 @@
     var paintFillButtonButtonObj = document.getElementById('PAINT_FILL_BUTTON');
     var undoButtonObj = document.getElementById('UNDO_BUTTON');
     var changeDeleteButtonObj = document.getElementById('CHANGE_DELETE_BUTTON');
-
+    var imageAlphaButtonObj = document.getElementById('IMAGE_ALPHA');
+    
 
     var smallMode = false;
       (function(){
@@ -187,11 +192,13 @@
             if(mouse.y < 0){mouse.y = 0;}
 
             if(isSpoit){
+                mouse.isDrawing = false;
                 //スポイトモード
                 setColor(getColor(mouse.x,mouse.y));
                 return;
             }
             if(isDelete){
+                mouse.isDrawing = false;
                 //該当のポイントを消す処理
                 deletePoint(mouse.x, mouse.y);
                 return;
@@ -214,11 +221,13 @@
           //6.ポインタを上げたら、描画禁止(myDrawをfalse)
             canvas.addEventListener("mouseup", function(e){
                 if(isSpoit){
+                    mouse.isDrawing = false;
                     //スポイトモード
                     spoitOFF();                    
                     return;
                 }
                 if(isDelete){
+                    mouse.isDrawing = false;
                     return;
                 }
                 if(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE){
@@ -310,10 +319,12 @@
           canvas.addEventListener("touchend", function(e){
             if(isSpoit){
                 //スポイトモード
+                mouse.isDrawing = false;
                 spoitOFF();                    
                 return;
             }
             if(isDelete){
+                mouse.isDrawing = false;
                 return;
             }
               if(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE){
@@ -365,6 +376,8 @@
         aplhaLayerCtx.fillStyle = "white";
         aplhaLayerCtx.clearRect(0, 0, 640, 480);
         aplhaLayerCtx.fillRect(0, 0, aplhaLayerCtx.canvas.width, aplhaLayerCtx.canvas.height);
+        imageAplhaMode = 0;
+        imageAlphaButtonObj.innerHTML=" 50% "
 
         var imageLayer = document.getElementById("imageLayer");
         if(!imageLayer || !imageLayer.getContext){
@@ -1041,10 +1054,49 @@
                 break;
         }
         redraw();
+    }
+    function changeImageAlpha(){
+        var alphaLayer = document.getElementById("alphaLayer");
+            if(!alphaLayer || !alphaLayer.getContext){
+            return false;
+        }
+        var aplhaLayerCtx = alphaLayer.getContext("2d");
 
+        //0:50% 1:100% 2:白背景 4:黒背景
+        switch(imageAplhaMode){
+            case 0:
+                imageAplhaMode = 1;
+                imageAlphaButtonObj.innerHTML=" 100% "
+                aplhaLayerCtx.clearRect(0, 0, 640, 480);
+                break;
+            case 1:
+                imageAplhaMode = 2;
+                imageAlphaButtonObj.innerHTML=" 白背景 "
+                aplhaLayerCtx.globalAlpha = 1;
+                aplhaLayerCtx.fillStyle = "white";
+                aplhaLayerCtx.clearRect(0, 0, 640, 480);
+                aplhaLayerCtx.fillRect(0, 0, aplhaLayerCtx.canvas.width, aplhaLayerCtx.canvas.height);
+                break;
+            case 2:
+                imageAplhaMode = 3;
+                imageAlphaButtonObj.innerHTML=" 黒背景 "
+                aplhaLayerCtx.globalAlpha = 1;
+                aplhaLayerCtx.fillStyle = "black";
+                aplhaLayerCtx.clearRect(0, 0, 640, 480);
+                aplhaLayerCtx.fillRect(0, 0, aplhaLayerCtx.canvas.width, aplhaLayerCtx.canvas.height);
+                break;
+            case 3:
+                imageAplhaMode = 0;
+                imageAlphaButtonObj.innerHTML=" 50% " //ホントは70%
+                aplhaLayerCtx.globalAlpha = 0.7;
+                aplhaLayerCtx.fillStyle = "white";
+                aplhaLayerCtx.clearRect(0, 0, 640, 480);
+                aplhaLayerCtx.fillRect(0, 0, aplhaLayerCtx.canvas.width, aplhaLayerCtx.canvas.height);
 
+                break;
+        }
 
-
+        
     }
 
     </script>
