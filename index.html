@@ -88,6 +88,9 @@
     <div class="selected_color" style="background:#ffff00; border:1px solid #000000;width:20px" onclick="setColor('ffff00')">　</div>
     <div class="selected_color" style="background:#ffffff; border:1px solid #000000;width:20px" onclick="setColor('ffffff')">　</div>
 </div>
+<div id="simpleMenu" class="menu" style="background:#ffeeee; padding:10px; border:1px solid #ff0000; border-radius:10px; width:600px; ">
+    CGタイトル：<input type="text" id="CG_TITLE" size="20"/>
+</div>
 </center>
 <script>
     //定数
@@ -111,6 +114,9 @@
     var isDelete = false;//削除モード
     var imageAplhaMode = 0;
 
+    var backGroundColor = "FFFFFF";
+    var cgTitle = "";
+
     var imageFileForm = document.getElementById('imageFile');
     imageFileForm.addEventListener('change', loadImage, false);
     
@@ -127,7 +133,11 @@
     var changeDeleteButtonObj = document.getElementById('CHANGE_DELETE_BUTTON');
     var imageAlphaButtonObj = document.getElementById('IMAGE_ALPHA');
     
+    var cgTitleForm = document.getElementById('CG_TITLE');
+    cgTitleForm.value = cgTitle;
+    cgTitleForm.addEventListener('change', changeCgTitle, false);
 
+    
     var smallMode = false;
       (function(){
         window.onload = function(){
@@ -248,8 +258,32 @@
             });
 
           canvas.addEventListener('mouseleave', function(e){
-            mouse.isDrawing = false;
-          });
+            if(isSpoit){
+                    mouse.isDrawing = false;
+                    //スポイトモード
+                    spoitOFF();                    
+                    return;
+                }
+                if(isDelete){
+                    mouse.isDrawing = false;
+                    return;
+                }
+                if(drawMode == DMODE_LINE || drawMode ==DMODE_AFTER_LINE){
+                    mouse.isDrawing = false;
+                //    drawData = drawData + ",-1\n";
+                    //document.getElementById("drawData").innerHTML = drawData;
+                    if(curDrawData.length > 0){
+	                    var drawDataObj = {color: penColor , drawData:curDrawData}
+	                    if(drawMode == DMODE_LINE){
+	                        drawDataList.push(drawDataObj);
+	                    }else{
+	                        afterDrawDataList.push(drawDataObj);
+	                    }
+	                }
+                    curDrawData = [];
+                    redraw();
+                }
+            });
           
           
           canvas.addEventListener("touchstart", function(e){
@@ -427,62 +461,73 @@
         reader.readAsDataURL(fileData);
     }
 
-      function makeCGData(){
-              var drawString = "640,480,0xFFFFFF,0\n";
+    function makeCGData(){
 
-            //LINEデータ
-            if(drawDataList.length>0){
-                drawString = drawString + "-10,";
-                for(idx = 0;idx < drawDataList.length;idx++){
-                    var drawDataObj = drawDataList[idx];
-                    var color = drawDataObj.color;
-                    if(color == 0){
-                        drawString = drawString + "0,";
-                    }else{
-                        drawString = drawString + "0x" + color + ","; 
-                    }
-                    for(lineIdx = 0;lineIdx < drawDataObj.drawData.length;lineIdx++){
-                        var drawPoint = drawDataObj.drawData[lineIdx];
-                        //TODO:前回と動きが少なすぎる場合は間引く？
-                        drawString = drawString + drawPoint[0] + "," + drawPoint[1] + ",";
-                    }
-                    drawString = drawString + "-1\n";
+        var drawString = "640,480,0x";
+        if(backGroundColor.length > 0){
+            drawString = drawString + backGroundColor + ",0";
+        }else{
+            drawString = drawString + "FFFFFF" + ",0";
+        }
+        
+        if(cgTitle.length > 0){
+            drawString = drawString + "#" + cgTitle;
+        }
+        drawString = drawString + "\n";
+
+        //LINEデータ
+        if(drawDataList.length>0){
+            drawString = drawString + "-10,";
+            for(idx = 0;idx < drawDataList.length;idx++){
+                var drawDataObj = drawDataList[idx];
+                var color = drawDataObj.color;
+                if(color == 0){
+                    drawString = drawString + "0,";
+                }else{
+                    drawString = drawString + "0x" + color + ","; 
+                }
+                for(lineIdx = 0;lineIdx < drawDataObj.drawData.length;lineIdx++){
+                    var drawPoint = drawDataObj.drawData[lineIdx];
+                    //TODO:前回と動きが少なすぎる場合は間引く？
+                    drawString = drawString + drawPoint[0] + "," + drawPoint[1] + ",";
                 }
                 drawString = drawString + "-1\n";
             }
+            drawString = drawString + "-1\n";
+        }
             
-            //PaintData
-            if(paintDataList.length > 0){
-                drawString = drawString + "-20,";
-                for(idx = 0;idx < paintDataList.length;idx++){
+        //PaintData
+        if(paintDataList.length > 0){
+            drawString = drawString + "-20,";
+            for(idx = 0;idx < paintDataList.length;idx++){
                 var paintDataObj = paintDataList[idx];
                 var color = paintDataObj[0];
                 var x =  paintDataObj[1];
                 var y =  paintDataObj[2];
                 drawString = drawString + "0x" + paintDataObj[0] + "," + paintDataObj[1] + "," + paintDataObj[2] + ",-1\n";
+            }
+                drawString = drawString + "-1\n";
+            }
+        //PAINT後LINEデータ
+        if(afterDrawDataList.length > 0){
+            drawString = drawString + "-10,";
+            for(idx = 0;idx < afterDrawDataList.length;idx++){
+                var drawDataObj = afterDrawDataList[idx];
+                var color = drawDataObj.color;
+                if(color == 0){
+                    drawString = drawString + "0,";
+                }else{
+                    drawString = drawString + "0x" + color + ","; 
+                }
+                for(lineIdx = 0;lineIdx < drawDataObj.drawData.length;lineIdx++){
+                    var drawPoint = drawDataObj.drawData[lineIdx];
+                    drawString = drawString + drawPoint[0] + "," + drawPoint[1] + ",";
                 }
                 drawString = drawString + "-1\n";
             }
-            //PAINT後LINEデータ
-            if(afterDrawDataList.length > 0){
-                drawString = drawString + "-10,";
-                for(idx = 0;idx < afterDrawDataList.length;idx++){
-                    var drawDataObj = afterDrawDataList[idx];
-                    var color = drawDataObj.color;
-                    if(color == 0){
-                        drawString = drawString + "0,";
-                    }else{
-                        drawString = drawString + "0x" + color + ","; 
-                    }
-                    for(lineIdx = 0;lineIdx < drawDataObj.drawData.length;lineIdx++){
-                        var drawPoint = drawDataObj.drawData[lineIdx];
-                        drawString = drawString + drawPoint[0] + "," + drawPoint[1] + ",";
-                    }
-                    drawString = drawString + "-1\n";
-                }
-                drawString = drawString + "-1\n";
-            }
-            return drawString;
+            drawString = drawString + "-1\n";
+        }
+        return drawString;
     }
 
     function execCopy(){
@@ -625,10 +670,16 @@
             dataString = reader.result;
             //改行で分割
             var dataLines = dataString.split("\n");
-            //TODO:#以降はコメントなので消す
-            //カンマで分割
+
             for(index = 0;index < dataLines.length;index++){
-                data = dataLines[index].split(",");
+                //T#以降はコメントなので消す 1行目の #以降があればCGタイトル
+                dataWithComment =  dataLines[index].split("#");
+                if(dataWithComment.length >=2 && index == 0){
+                    cgTitle = dataWithComment[1];
+                    cgTitleForm.value = cgTitle;
+                }
+                //カンマで分割
+                data = dataWithComment[0].split(",");
                 dataResult = [];
                 //中身""のところがあったら飛ばす
                 for(dataIdx = 0;dataIdx < data.length;dataIdx++){
@@ -652,7 +703,8 @@
         paintButtonObj.className = "normal_btn" ;
         afterLineButtonObj.className = "normal_btn" ;
         undoButtonObj.innerHTML=" UNDO[線を引く] "
-        spoitOFF();                    
+        spoitOFF();
+        redraw();
     }
     function changePAINT(){
         //PAINTモードにする
@@ -662,7 +714,8 @@
         paintButtonObj.className = "selected_btn" ;
         afterLineButtonObj.className = "normal_btn" ;
         undoButtonObj.innerHTML=" UNDO[色塗り] "
-        spoitOFF();                    
+        spoitOFF();
+        redraw();
     }
     function changeAFTERLINE(){
         //PAINT後LINEモードにする
@@ -672,7 +725,8 @@
         paintButtonObj.className = "normal_btn" ;
         afterLineButtonObj.className = "selected_btn" ;
         undoButtonObj.innerHTML=" UNDO[後の線] "
-        spoitOFF();                    
+        spoitOFF();
+        redraw();
     }
 
     function paint(x,y){
@@ -806,10 +860,10 @@
        		redraw();
     }
     
-       function undo(){
-           if(isDelete){
-               return;//Deleteモード中はUndo不可
-           }
+    function undo(){
+        if(isDelete){
+            return;//Deleteモード中はUndo不可
+        }
        	//モードによってどれから消すか。
         switch(drawMode){
             case DMODE_LINE:
@@ -832,41 +886,46 @@
                 break;
         }
         redraw();
-       }
+    }
         
-       function redraw(){
-          var canvas = document.getElementById('mycanvas');
-          if(!canvas || !canvas.getContext){
+    function redraw(){
+        var canvas = document.getElementById('mycanvas');
+            if(!canvas || !canvas.getContext){
             return false;
-          }
+        }
  
-          var ctx = canvas.getContext('2d');
-          ctx.clearRect(0, 0, 640, 480);
-          
-          for(idx = 0;idx < drawDataList.length;idx++){
-              var drawDataObj = drawDataList[idx];
-              var color = drawDataObj.color;
-              if(color == 0){
-                  colorStyle = "black"
-              }else{
-                  colorStyle = "#" + color
-              }
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 640, 480);
 
-              ctx.beginPath();
-              startDrawPoint = null;
-              endDrawPoint = null;
-              ctx.strokeStyle = colorStyle;
-              for(lineIdx = 0;lineIdx < drawDataObj.drawData.length;lineIdx++){
-                  var drawPoint = drawDataObj.drawData[lineIdx];
-                  if(lineIdx == 0){
-                     ctx.moveTo(drawPoint[0], drawPoint[1]);
-                     startDrawPoint= drawPoint;
-                  }else if(lineIdx == drawDataObj.drawData.length - 1){
-                     endDrawPoint = drawPoint;
-                  }
-                  ctx.lineTo(drawPoint[0], drawPoint[1]);
-              }
-              ctx.stroke();
+        //白で枠を描く（ペイントはみ出ないための暫定対応）
+        ctx.beginPath();
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.strokeRect(0, 0, 640, 480);
+          
+        for(idx = 0;idx < drawDataList.length;idx++){
+            var drawDataObj = drawDataList[idx];
+            var color = drawDataObj.color;
+            if(color == 0){
+                colorStyle = "black"
+            }else{
+                colorStyle = "#" + color
+            }
+
+            ctx.beginPath();
+            startDrawPoint = null;
+            endDrawPoint = null;
+            ctx.strokeStyle = colorStyle;
+            for(lineIdx = 0;lineIdx < drawDataObj.drawData.length;lineIdx++){
+                var drawPoint = drawDataObj.drawData[lineIdx];
+                if(lineIdx == 0){
+                    ctx.moveTo(drawPoint[0], drawPoint[1]);
+                    startDrawPoint= drawPoint;
+                }else if(lineIdx == drawDataObj.drawData.length - 1){
+                    endDrawPoint = drawPoint;
+                }
+                ctx.lineTo(drawPoint[0], drawPoint[1]);
+            }
+            ctx.stroke();
               
               //削除モードの時には丸表示予定
               //ctx.beginPath();
@@ -878,14 +937,14 @@
               //    ctx.arc(endDrawPoint[0], endDrawPoint[1], 2, 0, Math.PI*2, false);
               //}
               //ctx.fill();
-          }
+        }
 
-          for(idx = 0;idx < paintDataList.length;idx++){
-              var paintDataObj = paintDataList[idx];
-              var color = paintDataObj[0];
-              var x =  paintDataObj[1];
-              var y =  paintDataObj[2];
-              if(isPaintFill){
+        for(idx = 0;idx < paintDataList.length;idx++){
+            var paintDataObj = paintDataList[idx];
+            var color = paintDataObj[0];
+            var x =  paintDataObj[1];
+            var y =  paintDataObj[2];
+            if(isPaintFill){
                 //アプリの動作に合わせて、すでに塗ってある場所は塗らない
                 var imagedata = ctx.getImageData(x, y, 1, 1);
                 //  RGBAの取得
@@ -899,42 +958,42 @@
                     cfa.setAlphaDistance(0);
                     cfa.paint(x, y, getConversionRgba("#" + color));
                 }
-              }else{
+            }else{
                 ctx.beginPath();
-              	ctx.fillStyle = "#" + color;
-              	ctx.arc(x, y, 2, 0, Math.PI*2, false);
-              	ctx.fill();
-              }
-          }
+                ctx.fillStyle = "#" + color;
+                ctx.arc(x, y, 2, 0, Math.PI*2, false);
+                ctx.fill();
+            }
+        }
 
-          for(idx = 0;idx < afterDrawDataList.length;idx++){
-              var drawDataObj = afterDrawDataList[idx];
-              var color = drawDataObj.color;
-              if(color == 0){
-                  colorStyle = "black"
-              }else{
-                  colorStyle = "#" + color
-              }
-
-              ctx.beginPath();
-              startDrawPoint = null;
-              endDrawPoint = null;
-              ctx.strokeStyle = colorStyle;
-              for(lineIdx = 0;lineIdx < drawDataObj.drawData.length;lineIdx++){
-                  var drawPoint = drawDataObj.drawData[lineIdx];
-                  if(lineIdx == 0){
-                     ctx.moveTo(drawPoint[0], drawPoint[1]);
-                     startDrawPoint= drawPoint;
-                  }else if(lineIdx == drawDataObj.drawData.length - 1){
-                     endDrawPoint = drawPoint;
-                  }
-                  ctx.lineTo(drawPoint[0], drawPoint[1]);
-              }
-              ctx.stroke();
-          }
-      
+        if(drawMode == DMODE_AFTER_LINE){
+            for(idx = 0;idx < afterDrawDataList.length;idx++){
+                var drawDataObj = afterDrawDataList[idx];
+                var color = drawDataObj.color;
+                if(color == 0){
+                    colorStyle = "black"
+                }else{
+                    colorStyle = "#" + color
+                }
+                ctx.beginPath();
+                startDrawPoint = null;
+                endDrawPoint = null;
+                ctx.strokeStyle = colorStyle;
+                for(lineIdx = 0;lineIdx < drawDataObj.drawData.length;lineIdx++){
+                    var drawPoint = drawDataObj.drawData[lineIdx];
+                    if(lineIdx == 0){
+                        ctx.moveTo(drawPoint[0], drawPoint[1]);
+                        startDrawPoint= drawPoint;
+                    }else if(lineIdx == drawDataObj.drawData.length - 1){
+                        endDrawPoint = drawPoint;
+                    }
+                    ctx.lineTo(drawPoint[0], drawPoint[1]);
+                }
+                ctx.stroke();
+            }
+        }
+    }
        
-       }
        
 		function getConversionRgba(color_code) {
     		red   = parseInt(color_code.substring(1,3), 16);
@@ -1073,7 +1132,7 @@
                 imageAplhaMode = 2;
                 imageAlphaButtonObj.innerHTML=" 白背景 "
                 aplhaLayerCtx.globalAlpha = 1;
-                aplhaLayerCtx.fillStyle = "white";
+                aplhaLayerCtx.fillStyle = "#" + backGroundColor;
                 aplhaLayerCtx.clearRect(0, 0, 640, 480);
                 aplhaLayerCtx.fillRect(0, 0, aplhaLayerCtx.canvas.width, aplhaLayerCtx.canvas.height);
                 break;
@@ -1097,6 +1156,10 @@
         }
 
         
+    }
+
+    function changeCgTitle(){
+        cgTitle = cgTitleForm.value;
     }
 
     </script>
