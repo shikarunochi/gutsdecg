@@ -525,8 +525,9 @@
 
     function onTouchMoveLastPaint (e) {
         if(event.targetTouches.length != 1){ //2本以上でタッチされたときは無視
-               return;
+            return;
         }
+        e.preventDefault(); // タッチによる画面スクロールを止める
         var lastPaintCanvas = document.getElementById('lastPaintCanvas');
         if(!lastPaintCanvas || !lastPaintCanvas.getContext){
            return false;
