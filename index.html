@@ -470,11 +470,13 @@
             selectRect.endX = selectRect.startX;
             selectRect.endY = selectRect.startY;
             if(isSpoit){
+                doLastPaint == false
                 //スポイトモード
                 setColor(getColor(selectRect.startX,selectRect.startY));
                 return;
             }
             if(isDelete){
+                doLastPaint == false
                 //該当のポイントを消す処理
                 deletePoint(selectRect.startX,selectRect.startY);
                 return;
