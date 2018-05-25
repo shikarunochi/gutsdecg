@@ -26,6 +26,13 @@
         left: 0px;
         user-select: none;
     }
+    .canvasNone{
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        user-select: none;
+        display: none;
+    }
 	</style>
   <script src="scanlineseedfillpaint.js"></script>
 </head>
@@ -52,8 +59,9 @@
   
      <div id="simpleMenu" class="menu" style="background:#ffeeee; padding:10px; border:1px solid #ff0000; border-radius:10px; width:600px; ">
         <div id="LINE_BUTTON" class="selected_btn" onclick="changeLINE()"> 線を引く </div>
-        <div id="PAINT_BUTTON" class="normal_btn" onclick="changePAINT()"> 色塗りポイント追加 </div>
-        <div id="AFTER_LINE_BUTTON" class="normal_btn" onclick="changeAFTERLINE()"> 色塗り後の線を引く </div>
+        <div id="PAINT_BUTTON" class="normal_btn" onclick="changePAINT()"> 色塗り </div>
+        <div id="AFTER_LINE_BUTTON" class="normal_btn" onclick="changeAFTERLINE()"> 後の線を引く </div>
+        <div id="LAST_PAINT_BUTTON" class="normal_btn" onclick="changeLASTPAINT()"> 仕上げ塗り </div>
         <div id="CHANGE_DELETE_BUTTON" class="sp_normal_btn" onclick="changeDeleteMode()"> 削除 </div>
     </div>
     <br/>
@@ -75,6 +83,7 @@
       <div class="canvas"><canvas id="alphaLayer" width="640" height="480"></canvas>
     </div>
     <div class="canvas"><canvas width="640" height="480" id="mycanvas">Canvasに対応したブラウザを用意して下さい。</canvas></div>
+    <div class="canvas"><canvas width="640" height="480" id="lastPaintCanvas"></canvas></div>
   </div>
 
   <div id="info"></div>
@@ -97,12 +106,13 @@
     const DMODE_LINE = 0
     const DMODE_PAINT = 1
     const DMODE_AFTER_LINE = 2
-
+    const DMODE_LAST_PAINT = 3
 
     //描画データ
     var drawDataList = []; //線のリスト list[color, list[位置x,y]]
     var paintDataList = []; //ペイントデータのリスト。list[color, 位置x,y]
     var afterDrawDataList = [];//ペイント後に引く線のリスト list[color, list[位置x,y]]
+    var lastPaintDataList = [];//ペイント後に引く線のリスト list[color, list[位置x1,y1,x2,y2]]
     var curDrawData = []; //現在の線のリスト
 
     var penColor = '000000';//現在のペンの色
@@ -113,6 +123,7 @@
     var colorMode = SELECTED_COLOR;
     var isDelete = false;//削除モード
     var imageAplhaMode = 0;
+    var doLastPaint = false;
 
     var backGroundColor = "FFFFFF";
     var cgTitle = "";
@@ -126,6 +137,8 @@
     var lineButtonObj = document.getElementById('LINE_BUTTON');
     var paintButtonObj = document.getElementById('PAINT_BUTTON');
     var afterLineButtonObj = document.getElementById('AFTER_LINE_BUTTON');
+    var lastPaintButtonObj = document.getElementById('LAST_PAINT_BUTTON');
+    
     var selectedColorObj = document.getElementById('SELECTED_COLOR');
     var spoitButtonObj = document.getElementById('SPOIT_BUTTON');
     var paintFillButtonButtonObj = document.getElementById('PAINT_FILL_BUTTON');
@@ -137,7 +150,19 @@
     cgTitleForm.value = cgTitle;
     cgTitleForm.addEventListener('change', changeCgTitle, false);
 
-    
+    var selectRect = {
+        startY:0,
+        startX:0,
+        endY:0,
+        endX:0,
+        clear:function () {
+            this.startY = 0;
+            this.startX = 0;
+            this.endY   = 0;
+            this.endX   = 0;
+        }
+    };
+    var borderWidth = 1;
     var smallMode = false;
       (function(){
         window.onload = function(){
@@ -156,7 +181,7 @@
             color: "black",
             isDrawing: false
           };
-          var borderWidth = 1;
+
           canvas.addEventListener("mousemove", function(e){
             //2.ポインタが動いたら座標値を取得
                 var rect = e.target.getBoundingClientRect();
@@ -287,6 +312,9 @@
           
           
           canvas.addEventListener("touchstart", function(e){
+            if(event.targetTouches.length != 1){ //2本以上でタッチされたときは無視
+               return;
+            }
             var rect = e.target.getBoundingClientRect();
             mouse.x = e.touches[0].clientX - rect.left - borderWidth;
             mouse.y = e.touches[0].clientY - rect.top - borderWidth;
@@ -319,6 +347,9 @@
           });
         
           canvas.addEventListener("touchmove", function(e){
+            if(event.targetTouches.length != 1){ //2本以上でタッチされたときは無視
+               return;
+            }
             e.preventDefault(); // タッチによる画面スクロールを止める
             //タッチが動いたら座標値を取得
                 var rect = e.target.getBoundingClientRect();
@@ -376,10 +407,141 @@
                 curDrawData = [];
                 redraw();
              }
-          });          
-        }
+          }); 
+
+          var lastPaintCanvas = document.getElementById('lastPaintCanvas');
+          if(!lastPaintCanvas || !lastPaintCanvas.getContext){
+            return false;
+          }
+          var ctxLastPaintCanvas = lastPaintCanvas.getContext('2d');
+          lastPaintCanvas.addEventListener("mousedown", function(e) {
+            var rect = e.target.getBoundingClientRect();
+            selectRect.startX = Math.floor(e.clientX - rect.left - borderWidth);
+            if(selectRect.startX < 0){selectRect.startX = 0;}
+            selectRect.startY = Math.floor(e.clientY - rect.top - borderWidth);
+            if(selectRect.startY < 0){selectRect.startY = 0;}
+
+            selectRect.endX = selectRect.startX;
+            selectRect.endY = selectRect.startY;
+            if(isSpoit){
+                //スポイトモード
+                setColor(getColor(selectRect.startX,selectRect.startY));
+                return;
+            }
+            if(isDelete){
+                //該当のポイントを消す処理
+                deletePoint(selectRect.startX,selectRect.startY);
+                return;
+            }
+            doLastPaint = true;
+            lastPaintCanvas.addEventListener ("mousemove", onMouseMoveLastPaint, false);
+          });
+       
+          lastPaintCanvas.addEventListener("mouseup", function(e) {
+            if(isSpoit){
+                //スポイトモード
+                spoitOFF();                    
+                return;
+            }
+            if(doLastPaint == false){
+                return;
+            }
+              //データとしてはwidth,heightではなくて、すべて座標で持つ
+                lastPaintDataObj = [penColor,selectRect.startX,selectRect.startY,
+                                    selectRect.startX + selectRect.endX,selectRect.startY + selectRect.endY];
+                lastPaintDataList.push(lastPaintDataObj);
+                selectRect.clear();
+                ctxLastPaintCanvas.clearRect(0, 0, 640, 480);
+                lastPaintCanvas.removeEventListener ("mousemove", onMouseMoveLastPaint, false);
+                redraw();
+                doLastPaint = false;
+          });
+
+          lastPaintCanvas.addEventListener("touchstart", function(e) {
+            if(event.targetTouches.length != 1){ //2本以上でタッチされたときは無視
+               return;
+            }
+            var rect = e.target.getBoundingClientRect();
+            selectRect.startX = Math.floor(e.touches[0].clientX - rect.left - borderWidth);
+            if(selectRect.startX < 0){selectRect.startX = 0;}
+            selectRect.startY = Math.floor(e.touches[0].clientY - rect.top - borderWidth);
+            if(selectRect.startY < 0){selectRect.startY = 0;}
+
+            selectRect.endX = selectRect.startX;
+            selectRect.endY = selectRect.startY;
+            if(isSpoit){
+                //スポイトモード
+                setColor(getColor(selectRect.startX,selectRect.startY));
+                return;
+            }
+            if(isDelete){
+                //該当のポイントを消す処理
+                deletePoint(selectRect.startX,selectRect.startY);
+                return;
+            }
+            doLastPaint = true;
+            lastPaintCanvas.addEventListener ("touchmove", onTouchMoveLastPaint, false);
+          });
+
+          lastPaintCanvas.addEventListener("touchend", function(e) {
+            if(isSpoit){
+                //スポイトモード
+                spoitOFF();                    
+                return;
+            }
+            if(doLastPaint == false){
+                return;
+            }
+              //データとしてはwidth,heightではなくて、すべて座標で持つ
+                lastPaintDataObj = [penColor,selectRect.startX,selectRect.startY,
+                                    selectRect.startX + selectRect.endX,selectRect.startY + selectRect.endY];
+                lastPaintDataList.push(lastPaintDataObj);
+                selectRect.clear();
+                ctxLastPaintCanvas.clearRect(0, 0, 640, 480);
+                lastPaintCanvas.removeEventListener ("touchmove", onTouchMoveLastPaint, false);
+                redraw();
+                doLastPaint = false;
+          });
+
+
+          lastPaintOFF();  
+        }//onLoad
     })();
       
+    function onMouseMoveLastPaint (e) {
+        var lastPaintCanvas = document.getElementById('lastPaintCanvas');
+        if(!lastPaintCanvas || !lastPaintCanvas.getContext){
+           return false;
+         }
+         var ctxLastPaintCanvas = lastPaintCanvas.getContext('2d');
+         ctxLastPaintCanvas.clearRect(0, 0, 640, 480);
+
+         var rect = e.target.getBoundingClientRect();
+            selectRect.endX = Math.floor(e.clientX - rect.left - borderWidth - selectRect.startX);
+            selectRect.endY = Math.floor(e.clientY - rect.top - borderWidth - selectRect.startY);
+            ctxLastPaintCanvas.strokeStyle = "#" + penColor
+          ctxLastPaintCanvas.strokeRect (selectRect.startX, selectRect.startY, selectRect.endX, selectRect.endY);
+    };
+
+    function onTouchMoveLastPaint (e) {
+        if(event.targetTouches.length != 1){ //2本以上でタッチされたときは無視
+            return;
+        }
+        e.preventDefault(); // タッチによる画面スクロールを止める
+        var lastPaintCanvas = document.getElementById('lastPaintCanvas');
+        if(!lastPaintCanvas || !lastPaintCanvas.getContext){
+           return false;
+         }
+         var ctxLastPaintCanvas = lastPaintCanvas.getContext('2d');
+         ctxLastPaintCanvas.clearRect(0, 0, 640, 480);
+
+         var rect = e.target.getBoundingClientRect();
+            selectRect.endX = Math.floor(e.touches[0].clientX - rect.left - borderWidth - selectRect.startX);
+            selectRect.endY = Math.floor(e.touches[0].clientY - rect.top - borderWidth - selectRect.startY);
+            ctxLastPaintCanvas.strokeStyle = "#" + penColor
+          ctxLastPaintCanvas.strokeRect (selectRect.startX, selectRect.startY, selectRect.endX, selectRect.endY);
+    };
+
     function clearData(){
               if(!window.confirm("描画データをクリアしますか？")){
                   return
@@ -392,6 +554,7 @@
           drawDataList = []; //線のリスト list[color, list[位置x,y]]
           paintDataList = []; //ペイントデータのリスト。list[color, 位置x,y]
           afterDrawDataList = [];//ペイント後に引く線のリスト list[color, list[位置x,y]]
+          lastPaintDataList = [];
           curDrawData = []; //現在の線のリスト
           //document.getElementById("drawData").innerHTML = drawData;
           ctx.clearRect(0, 0, 640, 480);
@@ -527,6 +690,24 @@
             }
             drawString = drawString + "-1\n";
         }
+        //LASTPAINT データ
+        if(lastPaintDataList.length > 0){
+            drawString = drawString + "-30,";
+            for(idx = 0;idx < lastPaintDataList.length;idx++){
+                var lastPaintDataObj = lastPaintDataList[idx];
+                var color = lastPaintDataObj[0];
+                if(color == 0){
+                    drawString = drawString + "0,";
+                }else{
+                    drawString = drawString + "0x" + color + ","; 
+                }
+                drawString = drawString + lastPaintDataObj[1] + "," + lastPaintDataObj[2] + "," + lastPaintDataObj[3] + "," + lastPaintDataObj[4] + ",";
+                drawString = drawString + "\n";
+            }
+            drawString = drawString + "-1\n";
+        }
+
+
         return drawString;
     }
 
@@ -576,6 +757,7 @@
         var newDrawDataList = []; //線のリスト list[color, list[位置x,y]]
         var newPaintDataList = []; //ペイントデータのリスト。list[color, 位置x,y]
         var newAfterDrawDataList = [];//ペイント後に引く線のリスト list[color, list[位置x,y]]
+        var newLastPaintDataList = [];
         index = 0;
         var afterPaint = false;//1回でもペイント処理が入ったらTrue
         while(index < cgData.length){
@@ -639,7 +821,28 @@
                         index++;
                     }
                     break;
-            
+                case -30: //LAST PAINT
+                    index++;
+                    while(Number(cgData[index]) != -1){
+                        var color = String(cgData[index]);
+                        if(color.length > 2){
+                        	//0xから始まっていたら0x取る
+                        	if(color.indexOf("0x")==0){
+	                            color = color.substring(2);
+                        	}
+                        }
+                        index++;
+                        x1 = Number(cgData[index]);
+                        index++;
+                        y1 = Number(cgData[index]);    
+                        index++;
+                        x2 = Number(cgData[index]);
+                        index++;
+                        y2 = Number(cgData[index]);
+                        lastPaintDataObj = [color,x1,y1,x2,y2];
+                        newLastPaintDataList.push(lastPaintDataObj);
+                        index++;
+                    }
             }
             index++;
         }
@@ -647,6 +850,7 @@
         drawDataList = newDrawDataList;
         paintDataList = newPaintDataList;
         afterDrawDataList = newAfterDrawDataList;
+        lastPaintDataList = newLastPaintDataList;
         redraw();
     }
 
@@ -702,7 +906,9 @@
         lineButtonObj.className = "selected_btn";
         paintButtonObj.className = "normal_btn" ;
         afterLineButtonObj.className = "normal_btn" ;
+        lastPaintButtonObj.className = "normal_btn"  ;
         undoButtonObj.innerHTML=" UNDO[線を引く] "
+        lastPaintOFF();
         spoitOFF();
         redraw();
     }
@@ -713,7 +919,9 @@
         lineButtonObj.className = "normal_btn";
         paintButtonObj.className = "selected_btn" ;
         afterLineButtonObj.className = "normal_btn" ;
+        lastPaintButtonObj.className = "normal_btn"  ;
         undoButtonObj.innerHTML=" UNDO[色塗り] "
+        lastPaintOFF();
         spoitOFF();
         redraw();
     }
@@ -724,9 +932,23 @@
         lineButtonObj.className = "normal_btn";
         paintButtonObj.className = "normal_btn" ;
         afterLineButtonObj.className = "selected_btn" ;
+        lastPaintButtonObj.className = "normal_btn"  ;
         undoButtonObj.innerHTML=" UNDO[後の線] "
+        lastPaintOFF();
         spoitOFF();
         redraw();
+    }
+    function changeLASTPAINT(){
+        drawMode = DMODE_LAST_PAINT;
+        lineButtonObj.className = "normal_btn";
+        paintButtonObj.className = "normal_btn" ;
+        afterLineButtonObj.className = "normal_btn" ;
+        lastPaintButtonObj.className = "selected_btn" ;
+        undoButtonObj.innerHTML=" UNDO[仕上げ] "
+        lastPaintON();
+        spoitOFF();
+        redraw();
+
     }
 
     function paint(x,y){
@@ -831,19 +1053,34 @@
         spoitButtonObj.innerHTML = " 画像の色を取得 "
     }
 
+    function lastPaintON(){
+        var lastPaintCanvas = document.getElementById('lastPaintCanvas');
+        //クリアする
+        var ctx = lastPaintCanvas.getContext('2d');
+        ctx.clearRect(0, 0, 640, 480);
+        lastPaintCanvas.style.display = 'block';
+        //lastPaintCanvas.style.background = '#fdc689';
+    }
+    function lastPaintOFF(){
+        var lastPaintCanvas = document.getElementById('lastPaintCanvas');
+        lastPaintCanvas.style.display = 'none';
+    }
+
     function changeDeleteMode(){
         if (isDelete){
             changeDeleteButtonObj.className = "sp_normal_btn";
             isDelete = false;
             lineButtonObj.innerHTML = " 線を引く ";
-            paintButtonObj.innerHTML = " 色塗りポイント追加 ";
-            afterLineButtonObj.innerHTML = " 色塗り後の線を引く ";
+            paintButtonObj.innerHTML = " 色塗り ";
+            afterLineButtonObj.innerHTML = " 後の線を引く ";
+            lastPaintButtonObj.innerHTML = " 仕上げ塗り ";
         }else{
             changeDeleteButtonObj.className = "sp_selected_btn";
             isDelete = true;
             lineButtonObj.innerHTML = " 線を消す ";
-            paintButtonObj.innerHTML = " 色塗りポイント削除 ";
-            afterLineButtonObj.innerHTML = " 色塗り後の線を消す ";
+            paintButtonObj.innerHTML = " 色消し ";
+            afterLineButtonObj.innerHTML = " 後の線を消す ";
+            lastPaintButtonObj.innerHTML = " 仕上げ消し ";
         }
     }
     
@@ -884,6 +1121,13 @@
        		    }
        		    afterDrawDataList.pop();
                 break;
+            case DMODE_LAST_PAINT:
+                if(lastPaintDataList.length == 0){
+           			return;
+       		    }
+       		    lastPaintDataList.pop();
+                break;
+
         }
         redraw();
     }
@@ -966,7 +1210,7 @@
             }
         }
 
-        if(drawMode == DMODE_AFTER_LINE){
+        if(drawMode == DMODE_AFTER_LINE || drawMode == DMODE_LAST_PAINT){
             for(idx = 0;idx < afterDrawDataList.length;idx++){
                 var drawDataObj = afterDrawDataList[idx];
                 var color = drawDataObj.color;
@@ -992,6 +1236,27 @@
                 ctx.stroke();
             }
         }
+        if(drawMode == DMODE_LAST_PAINT){
+            for(idx = 0;idx < lastPaintDataList.length;idx++){
+                var lastPaintObj = lastPaintDataList[idx];
+                var color = lastPaintObj[0];
+                if(color == 0){
+                    colorStyle = "black"
+                }else{
+                    colorStyle = "#" + color
+                }
+                var x1 =  lastPaintObj[1];
+                var y1 =  lastPaintObj[2];
+                var x2 =  lastPaintObj[3];
+                var y2 =  lastPaintObj[4];
+                ctx.beginPath();
+                ctx.strokeStyle = colorStyle;
+                ctx.fillStyle = colorStyle;
+                ctx.fillRect(x1,y1,x2-x1,y2-y1);
+                ctx.stroke();
+            }
+        }
+
     }
        
        
@@ -1013,7 +1278,7 @@
       function setColor(color){
           penColor = color;
           selectedColorObj.style.backgroundColor = '#' + color;
-          spoitOFF();
+          //spoitOFF(); OFFはそれぞれのところで行う
       }  
        
      function changeViewMode(){
@@ -1111,6 +1376,24 @@
                 }
 
                 break;
+            case DMODE_LAST_PAINT:
+                if(lastPaintDataList.length == 0){
+                    return;
+                }
+                for(idx = lastPaintDataList.length - 1;idx >=0;idx--){
+                    var lastPaintData = lastPaintDataList[idx];
+                    //x1,y1,x2,y2 の中にポイントがあれば削除
+                    //逆もありうる
+                    if((lastPaintData[1] >= x && lastPaintData[3] <=x ||lastPaintData[3] >= x && lastPaintData[1] <=x)
+                       &&
+                       (lastPaintData[2] >= y && lastPaintData[4] <=y ||lastPaintData[4] >= y && lastPaintData[2] <=y )){
+                        selectedIdx = idx;
+                            break;
+                    }
+                }
+                if(selectedIdx != -1){
+                    lastPaintDataList.splice(selectedIdx, 1);
+                }
         }
         redraw();
     }
