@@ -889,8 +889,8 @@
                 dataResult = [];
                 //中身""のところがあったら飛ばす
                 for(dataIdx = 0;dataIdx < data.length;dataIdx++){
-                    if(data[dataIdx].length > 0){
-                        dataResult.push(data[dataIdx]);
+                    if(data[dataIdx].trim().length > 0){
+                        dataResult.push(data[dataIdx].trim());
                     }
                 }
                 Array.prototype.push.apply(cgData,dataResult);
