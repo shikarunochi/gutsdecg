@@ -66,7 +66,12 @@
     </div>
     <br/>
     <div id="advancedMenu"  class="menu" style="background:#ffeeee; padding:10px; border:1px solid #ff0000; border-radius:10px;width:600px;">
-        <div id="SELECTED_COLOR" class="selected_color" style="background:#000000; border:1px solid #000000;width:20px">　</div>
+        <div id="colorToolTipButton">
+        <span class="tooltipBlock">
+        <span id="colorToolTip">#FFFFFF</span>
+        </span>
+            <div id="SELECTED_COLOR" class="selected_color" style="background:#000000; border:1px solid #000000;width:20px">　</div>
+        </div>
         <div id="SPOIT_BUTTON" class="normal_btn" onclick="spoitON()"> 画像の色を取得 </div>
         <div id="PAINT_FILL_BUTTON" class="normal_btn" onclick="changePaintFillMode()"> 塗らないモード </div>
         <div id="UNDO_BUTTON" class="normal_btn" onclick="undo()"> UNDO[線を引く] </div>
@@ -505,6 +510,17 @@
                 doLastPaint = false;
           });
 
+          //https://dubdesign.net/javascript/hover-tooltip/
+          const colorToolTipTarget = document.getElementById("colorToolTipButton");
+          const colorToolTipPopup = document.getElementById("colorToolTip");
+          // ボタンにhoverした時
+          colorToolTipTarget.addEventListener('mouseover', () => {
+          colorToolTipPopup.style.display = 'block';
+            }, false);
+          // ボタンから離れた時
+            colorToolTipTarget.addEventListener('mouseleave', () => {
+            colorToolTipPopup.style.display = 'none';
+            }, false);
 
           lastPaintOFF();  
         }//onLoad
@@ -1281,6 +1297,8 @@
           penColor = color;
           selectedColorObj.style.backgroundColor = '#' + color;
           //spoitOFF(); OFFはそれぞれのところで行う
+          var colorToolTipObj = document.getElementById('colorToolTip');
+          colorToolTipObj.innerText='#' + color;
       }  
        
      function changeViewMode(){
