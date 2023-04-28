@@ -455,6 +455,7 @@
                 return;
             }
             if(isDelete){
+                doLastPaint = false
                 //該当のポイントを消す処理
                 deletePoint(selectRect.startX,selectRect.startY);
                 return;
@@ -1082,6 +1083,7 @@
         canvas.style.cursor = 'crosshair'
         spoitButtonObj.className = "selected_btn";
         spoitButtonObj.innerHTML = " 色を取得中！ "
+        doLastPaint = false; //暴発を防ぐ
     }
     
     const sleep = waitTime => new Promise( resolve => setTimeout(resolve, waitTime) );
@@ -1094,6 +1096,7 @@
         var canvas = document.getElementById('mycanvas');
         canvas.style.cursor = 'default'
         spoitButtonObj.innerHTML = " 画像の色を取得 "
+        doLastPaint = false; //暴発を防ぐ
         //ちょっと待つ
         sleepFunc();
     }
