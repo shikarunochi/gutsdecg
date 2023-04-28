@@ -211,6 +211,27 @@
                     mouse.startY = mouse.y;
                     //drawData = drawData + "," + Math.round(mouse.x) + "," + Math.round(mouse.y)
                     var point = [Math.round(mouse.x),Math.round(mouse.y)];
+
+                    //前回と傾きが同じだった場合、前回のポイントは削除する。
+                    if(curDrawData.length >=2){
+                        point1 = curDrawData[curDrawData.length-2]; 
+                        point2 = curDrawData[curDrawData.length-1]; 
+                        x1 = point1[0];
+                        y1 = point1[1];
+                        x2 = point2[0];
+                        y2 = point1[1];
+                        x3 = point[0];
+                        y3 = point[1];
+                        if((y1 - y2 == 0) && (y1 - y3 == 0)){
+                        //両方傾きゼロだけ特別扱い
+                            curDrawData.pop();
+                        }else if((y1 - y2 == 0) || (y1 - y3 == 0)){
+                        //分母ゼロなので割れない
+                        }
+                        else if((x1-x2) / (y1 - y2) == (x1-x3) / (y1 -y3)){
+                            curDrawData.pop();
+                        }
+                    }
                     curDrawData.push(point);
                     //document.getElementById("drawData").innerHTML = drawData;
                 }
@@ -1063,12 +1084,18 @@
         spoitButtonObj.innerHTML = " 色を取得中！ "
     }
     
+    const sleep = waitTime => new Promise( resolve => setTimeout(resolve, waitTime) );
+    const sleepFunc = async function( ){
+        await sleep( 100 );
+    }
     function spoitOFF(){
         isSpoit = false;
         spoitButtonObj.className = "normal_btn";
         var canvas = document.getElementById('mycanvas');
         canvas.style.cursor = 'default'
         spoitButtonObj.innerHTML = " 画像の色を取得 "
+        //ちょっと待つ
+        sleepFunc();
     }
 
     function lastPaintON(){
