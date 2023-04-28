@@ -524,14 +524,16 @@
                 return;
             }
               //データとしてはwidth,heightではなくて、すべて座標で持つ
-                lastPaintDataObj = [penColor,selectRect.startX,selectRect.startY,
-                                    selectRect.startX + selectRect.endX,selectRect.startY + selectRect.endY];
-                lastPaintDataList.push(lastPaintDataObj);
-                selectRect.clear();
-                ctxLastPaintCanvas.clearRect(0, 0, 640, 480);
-                lastPaintCanvas.removeEventListener ("touchmove", onTouchMoveLastPaint, false);
-                redraw();
-                doLastPaint = false;
+              if(selectRect.startX != selectRect.endX || selectRect.startY != selectRect.endY ){ //ポインタを移動してない場合は同じ値が入っている
+                    lastPaintDataObj = [penColor,selectRect.startX,selectRect.startY,
+                                        selectRect.startX + selectRect.endX,selectRect.startY + selectRect.endY];
+                    lastPaintDataList.push(lastPaintDataObj);
+              }
+              selectRect.clear();
+              ctxLastPaintCanvas.clearRect(0, 0, 640, 480);
+              lastPaintCanvas.removeEventListener ("touchmove", onTouchMoveLastPaint, false);
+              redraw();
+              doLastPaint = false;
           });
 
           //https://dubdesign.net/javascript/hover-tooltip/
