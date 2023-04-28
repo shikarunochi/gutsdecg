@@ -1326,6 +1326,7 @@
           //spoitOFF(); OFFはそれぞれのところで行う
           var colorToolTipObj = document.getElementById('colorToolTip');
           colorToolTipObj.innerText='#' + color;
+          doLastPaint = false; //暴発を防ぐ
       }  
        
      function changeViewMode(){
