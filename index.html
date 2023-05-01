@@ -228,7 +228,7 @@
                         }else if((y1 - y2 == 0) || (y1 - y3 == 0)){
                         //分母ゼロなので割れない
                         }
-                        else if((x1-x2) / (y1 - y2) == (x1-x3) / (y1 -y3)){
+                        else if(Math.trunc((x1-x2) / (y1 - y2)) == Math.trunc((x1-x3) / (y1 -y3))){
                             curDrawData.pop();
                         }
                     }
@@ -409,7 +409,7 @@
                         }else if((y1 - y2 == 0) || (y1 - y3 == 0)){
                         //分母ゼロなので割れない
                         }
-                        else if((x1-x2) / (y1 - y2) == (x1-x3) / (y1 -y3)){
+                        else if(Math.trunc((x1-x2) / (y1 - y2)) == Math.trunc((x1-x3) / (y1 -y3))){
                             curDrawData.pop();
                         }
                      }
