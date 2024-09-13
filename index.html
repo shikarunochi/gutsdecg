@@ -407,24 +407,30 @@
                      //drawData = drawData + "," + Math.round(mouse.x) + "," + Math.round(mouse.y)
                      //document.getElementById("drawData").innerHTML = drawData;
                      var point = [Math.round(mouse.x),Math.round(mouse.y)];
-                     //前回と傾きが同じだった場合、前回のポイントは削除する。
+                    //前回と傾きが同じだった場合、もしくは SINGLE_LINE の場合、前回のポイントは削除する。
+                     var singleLineCheck = document.getElementById("SINGLE_LINE").checked;
                      if(curDrawData.length >=2){
-                        point1 = curDrawData[curDrawData.length-2]; 
-                        point2 = curDrawData[curDrawData.length-1]; 
-                        x1 = point1[0];
-                        y1 = point1[1];
-                        x2 = point2[0];
-                        y2 = point1[1];
-                        x3 = point[0];
-                        y3 = point[1];
-                        if((y1 - y2 == 0) && (y1 - y3 == 0)){
-                        //両方傾きゼロだけ特別扱い
+                        if(singleLineCheck == true){
                             curDrawData.pop();
-                        }else if((y1 - y2 == 0) || (y1 - y3 == 0)){
-                        //分母ゼロなので割れない
-                        }
-                        else if(Math.trunc((x1-x2) / (y1 - y2)) == Math.trunc((x1-x3) / (y1 -y3))){
-                            curDrawData.pop();
+                        }else{
+
+                            point1 = curDrawData[curDrawData.length-2]; 
+                            point2 = curDrawData[curDrawData.length-1]; 
+                            x1 = point1[0];
+                            y1 = point1[1];
+                            x2 = point2[0];
+                            y2 = point1[1];
+                            x3 = point[0];
+                            y3 = point[1];
+                            if((y1 - y2 == 0) && (y1 - y3 == 0)){
+                            //両方傾きゼロだけ特別扱い
+                                curDrawData.pop();
+                            }else if((y1 - y2 == 0) || (y1 - y3 == 0)){
+                            //分母ゼロなので割れない
+                            }
+                            else if(Math.trunc((x1-x2) / (y1 - y2)) == Math.trunc((x1-x3) / (y1 -y3))){
+                                curDrawData.pop();
+                            }
                         }
                      }
                     curDrawData.push(point);
@@ -514,7 +520,7 @@
                     lastPaintDataList.push(lastPaintDataObj);
               }
               selectRect.clear();
-              ctxLastPaintCanvas.clearRect(0, 0, 640, 480);
+              ctxLastPaintCanvas.clearRect(0, 0, 640, 480);g
               lastPaintCanvas.removeEventListener ("mousemove", onMouseMoveLastPaint, false);
               redraw();
               doLastPaint = false;
