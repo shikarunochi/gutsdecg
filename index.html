@@ -59,6 +59,7 @@
   
      <div id="simpleMenu" class="menu" style="background:#ffeeee; padding:10px; border:1px solid #ff0000; border-radius:10px; width:600px; ">
         <div id="LINE_BUTTON" class="selected_btn" onclick="changeLINE()"> 線を引く </div>
+        <input type="checkbox" id="SINGLE_LINE">
         <div id="PAINT_BUTTON" class="normal_btn" onclick="changePAINT()"> 色塗り </div>
         <div id="AFTER_LINE_BUTTON" class="normal_btn" onclick="changeAFTERLINE()"> 後の線を引く </div>
         <div id="LAST_PAINT_BUTTON" class="normal_btn" onclick="changeLASTPAINT()"> 仕上げ塗り </div>
@@ -68,12 +69,13 @@
     <div id="advancedMenu"  class="menu" style="background:#ffeeee; padding:10px; border:1px solid #ff0000; border-radius:10px;width:600px;">
         <div id="colorToolTipButton">
         <span class="tooltipBlock">
-        <span id="colorToolTip">#FFFFFF</span>
+        <span id="colorToolTip">#000000</span>
         </span>
-            <div id="SELECTED_COLOR" class="selected_color" style="background:#000000; border:1px solid #000000;width:20px">　</div>
+        <div id="SELECTED_COLOR" class="selected_color" style="background:#000000; border:1px solid #000000;width:20px">　</div>
+        <input type="text" id="SELECTED_COLOR_CODE" size="6" value="#000000" onChange="changeColorCode()"/>
         </div>
-        <div id="SPOIT_BUTTON" class="normal_btn" onclick="spoitON()"> 画像の色を取得 </div>
-        <div id="PAINT_FILL_BUTTON" class="normal_btn" onclick="changePaintFillMode()"> 塗らないモード </div>
+        <div id="SPOIT_BUTTON" class="normal_btn" onclick="spoitON()"> 画面の色取得 </div>
+        <div id="PAINT_FILL_BUTTON" class="normal_btn" onclick="changePaintFillMode()"> 塗らない </div>
         <div id="UNDO_BUTTON" class="normal_btn" onclick="undo()"> UNDO[線を引く] </div>
     </div>
 
@@ -212,24 +214,29 @@
                     //drawData = drawData + "," + Math.round(mouse.x) + "," + Math.round(mouse.y)
                     var point = [Math.round(mouse.x),Math.round(mouse.y)];
 
-                    //前回と傾きが同じだった場合、前回のポイントは削除する。
+                    //前回と傾きが同じだった場合、もしくは SINGLE_LINE の場合、前回のポイントは削除する。
+                    var singleLineCheck = document.getElementById("SINGLE_LINE").checked;
                     if(curDrawData.length >=2){
-                        point1 = curDrawData[curDrawData.length-2]; 
-                        point2 = curDrawData[curDrawData.length-1]; 
-                        x1 = point1[0];
-                        y1 = point1[1];
-                        x2 = point2[0];
-                        y2 = point1[1];
-                        x3 = point[0];
-                        y3 = point[1];
-                        if((y1 - y2 == 0) && (y1 - y3 == 0)){
-                        //両方傾きゼロだけ特別扱い
+                        if(singleLineCheck == true){
                             curDrawData.pop();
-                        }else if((y1 - y2 == 0) || (y1 - y3 == 0)){
-                        //分母ゼロなので割れない
-                        }
-                        else if(Math.trunc((x1-x2) / (y1 - y2)) == Math.trunc((x1-x3) / (y1 -y3))){
-                            curDrawData.pop();
+                        }else{
+                            point1 = curDrawData[curDrawData.length-2]; 
+                            point2 = curDrawData[curDrawData.length-1]; 
+                            x1 = point1[0];
+                            y1 = point1[1];
+                            x2 = point2[0];
+                            y2 = point1[1];
+                            x3 = point[0];
+                            y3 = point[1];
+                            if((y1 - y2 == 0) && (y1 - y3 == 0)){
+                            //両方傾きゼロだけ特別扱い
+                                curDrawData.pop();
+                            }else if((y1 - y2 == 0) || (y1 - y3 == 0)){
+                            //分母ゼロなので割れない
+                            }
+                            else if(Math.trunc((x1-x2) / (y1 - y2)) == Math.trunc((x1-x3) / (y1 -y3))){
+                                curDrawData.pop();
+                            }
                         }
                     }
                     curDrawData.push(point);
@@ -281,6 +288,9 @@
 
           //6.ポインタを上げたら、描画禁止(myDrawをfalse)
             canvas.addEventListener("mouseup", function(e){
+                if(mouse.isDrawing == false){ //もともと描画中では無い時
+                    return;
+                }
                 if(isSpoit){
                     mouse.isDrawing = false;
                     //スポイトモード
@@ -309,7 +319,11 @@
             });
 
           canvas.addEventListener('mouseleave', function(e){
-            if(isSpoit){
+                if(mouse.isDrawing == false){ //もともと描画中では無い時
+                    return;
+                }
+
+                if(isSpoit){
                     mouse.isDrawing = false;
                     //スポイトモード
                     spoitOFF();                    
@@ -791,6 +805,11 @@
 
               document.body.removeChild(temp);
               // true なら実行できている falseなら失敗か対応していないか
+              if(result==true){
+                alert('クリップボードにコピーしました');
+              }else{
+                alert('クリップボードにコピーできませんでした');
+              }
         return result;
     }
 
@@ -1119,7 +1138,7 @@
         spoitButtonObj.className = "normal_btn";
         var canvas = document.getElementById('mycanvas');
         canvas.style.cursor = 'default'
-        spoitButtonObj.innerHTML = " 画像の色を取得 "
+        spoitButtonObj.innerHTML = " 画面の色取得 "
         doLastPaint = false; //暴発を防ぐ
         //ちょっと待つ
         sleepFunc();
@@ -1160,11 +1179,11 @@
        		if(isPaintFill){
        			isPaintFill = false;
        			paintFillButtonButtonObj.className = "normal_btn";
-                paintFillButtonButtonObj.innerHTML=" 塗らないモード " 
+                paintFillButtonButtonObj.innerHTML=" 塗らない " 
        		}else{
        			isPaintFill = true;
        			paintFillButtonButtonObj.className = "selected_btn";
-                paintFillButtonButtonObj.innerHTML=" 塗りつぶしモード " 
+                paintFillButtonButtonObj.innerHTML=" 塗りつぶし " 
        		}
        		redraw();
     }
@@ -1353,8 +1372,35 @@
           //spoitOFF(); OFFはそれぞれのところで行う
           var colorToolTipObj = document.getElementById('colorToolTip');
           colorToolTipObj.innerText='#' + color;
+          var colorCodeObj = document.getElementById('SELECTED_COLOR_CODE');
+          colorCodeObj.value='#' + color;
           doLastPaint = false; //暴発を防ぐ
       }  
+
+      function changeColorCode(){//直接入力されたとき
+        //それがカラーコードであるか
+        var colorCodeObj = document.getElementById('SELECTED_COLOR_CODE');
+        var newColorCode = colorCodeObj.value;
+        newColorCode = newColorCode.toUpperCase();//大文字化する
+        //#から始まる
+        if(newColorCode.charAt(0)!='#'){
+            return;
+        }
+        //全部で7文字
+        if(newColorCode.length!=7){ 
+            return;
+        }
+        color = newColorCode.substring(1)
+        //残りが[0-9A-F]
+        if(color.match(/^[0-9A-F]+$/)==false){
+            return;
+        }
+        penColor = color;
+        selectedColorObj.style.backgroundColor = '#' + color;
+        //spoitOFF(); OFFはそれぞれのところで行う
+        var colorToolTipObj = document.getElementById('colorToolTip');
+        colorToolTipObj.innerText='#' + color;
+      }
        
      function changeViewMode(){
 		var meta = document.createElement('meta');
